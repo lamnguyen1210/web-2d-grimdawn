@@ -1,0 +1,58 @@
+import type { ItemDefinition } from "../gameplay/types";
+
+export const itemDefinitions: ItemDefinition[] = [
+  {
+    id: "rusted-rifle",
+    name: "Rusted Rifle",
+    slot: "weapon",
+    rarity: "common",
+    baseStats: { physicalDamageMin: 6, physicalDamageMax: 10, attackSpeed: 0.1 },
+    affixCapacity: 2,
+    requiredLevel: 1,
+  },
+  {
+    id: "brigand-jacket",
+    name: "Brigand Jacket",
+    slot: "chest",
+    rarity: "common",
+    baseStats: { armor: 12, maxHealth: 18 },
+    affixCapacity: 2,
+    requiredLevel: 1,
+  },
+  {
+    id: "charred-band",
+    name: "Charred Band",
+    slot: "ring",
+    rarity: "common",
+    baseStats: { fireDamageMin: 1, fireDamageMax: 2, maxEnergy: 10 },
+    affixCapacity: 2,
+    requiredLevel: 1,
+  },
+  {
+    id: "watchman-carbine",
+    name: "Watchman Carbine",
+    slot: "weapon",
+    rarity: "magic",
+    baseStats: { physicalDamageMin: 10, physicalDamageMax: 14, critChance: 0.05 },
+    affixCapacity: 2,
+    requiredLevel: 2,
+  },
+  {
+    id: "wardens-coat",
+    name: "Warden's Coat",
+    slot: "chest",
+    rarity: "magic",
+    baseStats: { armor: 18, maxHealth: 26, fireResistance: 0.05 },
+    affixCapacity: 2,
+    requiredLevel: 2,
+  },
+  {
+    id: "pyre-loop",
+    name: "Pyre Loop",
+    slot: "ring",
+    rarity: "magic",
+    baseStats: { maxEnergy: 14, fireDamageMin: 3, fireDamageMax: 5 },
+    affixCapacity: 2,
+    requiredLevel: 2,
+  },
+];
