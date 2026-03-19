@@ -17,7 +17,7 @@ import { LootSystem } from "../systems/LootSystem";
 import { RenderSystem } from "../systems/RenderSystem";
 import { SkillSystem } from "../systems/SkillSystem";
 import { ZoneSystem } from "../systems/ZoneSystem";
-import { getNearestEnemy, moveActorTowards } from "../systems/movement";
+import { getNearestEnemy, moveActorTowards } from "../gameplay/movement";
 
 const SAVE_DEBOUNCE_MS = 4000;
 

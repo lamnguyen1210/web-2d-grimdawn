@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { enemyDefinitions } from "../content/enemies";
 import type { ActorState, DamageType, EnemyDefinition, ProjectileState } from "../gameplay/types";
-import { moveActorTowards, moveActorAway, pushActor } from "./movement";
+import { moveActorTowards, moveActorAway, pushActor } from "../gameplay/movement";
 import type { GameContext } from "./GameContext";
 import type { CombatSystem } from "./CombatSystem";
 import type { ZoneSystem } from "./ZoneSystem";
