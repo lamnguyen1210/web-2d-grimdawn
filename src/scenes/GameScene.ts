@@ -34,6 +34,8 @@ export class GameScene extends Phaser.Scene {
   private wasd!: Record<"W" | "A" | "S" | "D", Phaser.Input.Keyboard.Key>;
   private skill1Key!: Phaser.Input.Keyboard.Key;
   private skill2Key!: Phaser.Input.Keyboard.Key;
+  private skill3Key!: Phaser.Input.Keyboard.Key;
+  private skill4Key!: Phaser.Input.Keyboard.Key;
   private inventoryKey!: Phaser.Input.Keyboard.Key;
   private potionKey!: Phaser.Input.Keyboard.Key;
   private debugKey!: Phaser.Input.Keyboard.Key;
@@ -57,6 +59,8 @@ export class GameScene extends Phaser.Scene {
     };
     this.skill1Key = this.input.keyboard!.addKey("ONE");
     this.skill2Key = this.input.keyboard!.addKey("TWO");
+    this.skill3Key = this.input.keyboard!.addKey("THREE");
+    this.skill4Key = this.input.keyboard!.addKey("FOUR");
     this.inventoryKey = this.input.keyboard!.addKey("I");
     this.potionKey = this.input.keyboard!.addKey("SPACE");
     this.debugKey = this.input.keyboard!.addKey("F1");
@@ -70,7 +74,7 @@ export class GameScene extends Phaser.Scene {
       .text(24, 52, "", { fontFamily: "Trebuchet MS", fontSize: "15px", color: "#f0e6d2", stroke: "#000000", strokeThickness: 3 })
       .setScrollFactor(0).setDepth(90);
     const debugText = this.add
-      .text(24, 134, "", { fontFamily: "Consolas", fontSize: "13px", color: "#f8d08b", stroke: "#000000", strokeThickness: 3 })
+      .text(24, 150, "", { fontFamily: "Consolas", fontSize: "13px", color: "#f8d08b", stroke: "#000000", strokeThickness: 3 })
       .setScrollFactor(0).setDepth(90);
 
     const combatLog: string[] = [];
@@ -104,6 +108,7 @@ export class GameScene extends Phaser.Scene {
       showDebug: false,
       combatLog,
       lastPointerWorld,
+      minimapDots: [],
       autosave: () => this.autosave(),
       log: (msg) => this.log(msg),
     };
@@ -227,6 +232,7 @@ export class GameScene extends Phaser.Scene {
     this.combat.updateProjectiles(time, delta);
     this.combat.updateHazards(time);
     this.combat.updateBurning(time);
+    this.combat.updatePoison(time);
     this.render.updateFloatingTexts(time, delta);
     this.render.updateCombatEffects(time);
     this.loot.updatePickups();
@@ -277,6 +283,12 @@ export class GameScene extends Phaser.Scene {
         burnDamageMin: 0,
         burnDamageMax: 0,
         nextBurnTickAt: 0,
+        poisonedUntil: 0,
+        poisonDamageMin: 0,
+        poisonDamageMax: 0,
+        nextPoisonTickAt: 0,
+        chilledUntil: 0,
+        chillFactor: 0,
       },
     };
     this.ctx.actors.set(this.ctx.player.id, this.ctx.player);
@@ -295,6 +307,12 @@ export class GameScene extends Phaser.Scene {
         this.ctx.lastPointerWorld.x || this.ctx.player.x + 10,
         this.ctx.lastPointerWorld.y || this.ctx.player.y,
       );
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.skill3Key)) {
+      this.skill.tryCastFrostNova();
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.skill4Key)) {
+      this.skill.tryCastVenomShot();
     }
     if (Phaser.Input.Keyboard.JustDown(this.inventoryKey)) {
       this.isInventoryVisible = !this.isInventoryVisible;
@@ -319,6 +337,10 @@ export class GameScene extends Phaser.Scene {
     player.health = Phaser.Math.Clamp(player.health + player.stats.healthRegen * (delta / 1000), 0, player.stats.maxHealth);
     player.energy = Phaser.Math.Clamp(player.energy + player.stats.energyRegen * (delta / 1000), 0, player.stats.maxEnergy);
 
+    // Chill slows player movement
+    const chillMult = player.status.chilledUntil > time ? 1 - player.status.chillFactor : 1;
+    const effectiveMoveSpeed = player.stats.moveSpeed * chillMult;
+
     const moveVector = new Phaser.Math.Vector2(
       (this.wasd.D.isDown ? 1 : 0) - (this.wasd.A.isDown ? 1 : 0),
       (this.wasd.S.isDown ? 1 : 0) - (this.wasd.W.isDown ? 1 : 0),
@@ -326,7 +348,7 @@ export class GameScene extends Phaser.Scene {
 
     const zone = zoneDefinitions[this.ctx.activeZoneId];
     if (moveVector.lengthSq() > 0) {
-      moveVector.normalize().scale(player.stats.moveSpeed * (delta / 1000));
+      moveVector.normalize().scale(effectiveMoveSpeed * (delta / 1000));
       player.moveTarget = undefined;
       player.targetId = undefined;
       player.x = Phaser.Math.Clamp(player.x + moveVector.x, 16, zone.width - 16);
@@ -342,13 +364,13 @@ export class GameScene extends Phaser.Scene {
         const range = skillDefinitions.basicAttack.range;
         const distance = Phaser.Math.Distance.Between(player.x, player.y, target.x, target.y);
         if (distance > range * 0.86) {
-          moveActorTowards(player, target.x, target.y, player.stats.moveSpeed, delta, zone.width, zone.height);
+          moveActorTowards(player, target.x, target.y, effectiveMoveSpeed, delta, zone.width, zone.height);
         } else if (time >= player.attackCooldownUntil) {
           this.combat.performBasicAttack(target, time);
         }
       }
     } else if (player.moveTarget) {
-      const arrived = moveActorTowards(player, player.moveTarget.x, player.moveTarget.y, player.stats.moveSpeed, delta, zone.width, zone.height);
+      const arrived = moveActorTowards(player, player.moveTarget.x, player.moveTarget.y, effectiveMoveSpeed, delta, zone.width, zone.height);
       if (arrived) {
         player.moveTarget = undefined;
       }

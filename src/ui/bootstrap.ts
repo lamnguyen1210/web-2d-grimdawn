@@ -23,6 +23,7 @@ const formatStats = (snapshot: RuntimeStateSnapshot): Array<[string, string]> =>
   ["Physical", `${snapshot.player.stats.physicalDamageMin}-${snapshot.player.stats.physicalDamageMax}`],
   ["Fire", `${snapshot.player.stats.fireDamageMin}-${snapshot.player.stats.fireDamageMax}`],
   ["Crit", `${Math.round(snapshot.player.stats.critChance * 100)}%`],
+  ["Resist", `P${Math.round(snapshot.player.stats.physicalResistance * 100)}% F${Math.round(snapshot.player.stats.fireResistance * 100)}% V${Math.round(snapshot.player.stats.poisonResistance * 100)}%`],
   ["Gold", `${snapshot.inventory.gold}`],
 ];
 
@@ -42,7 +43,7 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
         <section class="panel">
           <h2>Field Report</h2>
           <div id="stats-grid" class="stat-grid"></div>
-          <p class="hint">Controls: left click move/attack, right click Fire Bomb, WASD override, 1 Cleave Shot, 2 Fire Bomb, I inventory, Space potion, F1 debug, F5 test loot.</p>
+          <p class="hint">Controls: left click move/attack, right click Fire Bomb, WASD override, 1 Cleave Shot, 2 Fire Bomb, 3 Frost Nova, 4 Venom Shot, I inventory, Space potion, F1 debug, F5 test loot.</p>
         </section>
         <section class="panel">
           <h3>Equipment</h3>

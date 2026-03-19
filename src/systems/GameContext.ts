@@ -56,6 +56,10 @@ export interface GameContext {
   bossHealthBarBg?: Phaser.GameObjects.Rectangle;
   bossHealthBar?: Phaser.GameObjects.Rectangle;
 
+  // Minimap
+  minimapBg?: Phaser.GameObjects.Rectangle;
+  minimapDots: Phaser.GameObjects.Shape[];
+
   // Misc state
   skillCooldowns: Record<string, number>;
   phaseTwoSummoned: boolean;

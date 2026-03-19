@@ -53,8 +53,12 @@ export class AISystem {
         });
       }
 
+      // Chill slows attack cooldowns
+      const chillMult = actor.status.chilledUntil > time ? 1 + actor.status.chillFactor : 1;
+      const effectiveCooldown = definition.attackCooldownMs * chillMult;
+
       if (distance <= definition.attackRange && time >= actor.attackCooldownUntil) {
-        actor.attackCooldownUntil = time + definition.attackCooldownMs;
+        actor.attackCooldownUntil = time + effectiveCooldown;
         if (definition.archetype === "ranged" || definition.archetype === "boss") {
           this.fireEnemyProjectile(actor, definition);
           if (definition.archetype === "boss" && actor.phase === 2) {
@@ -65,12 +69,20 @@ export class AISystem {
           if (definition.archetype === "bruiser") {
             pushActor(this.ctx.player, actor.x, actor.y, 24, zoneW, zoneH);
           }
+          // Plague Stalker applies poison on contact
+          if (definition.id === "plagueStalker") {
+            this.combat.applyPoison(this.ctx.player, time, 2, 4);
+          }
         }
       } else if (actor.aiState === "chase") {
+        // Chill slows movement
+        const moveSpeedMult = actor.status.chilledUntil > time ? 1 - actor.status.chillFactor : 1;
+        const effectiveSpeed = actor.stats.moveSpeed * moveSpeedMult;
+
         if (definition.archetype === "ranged" && distance < 140) {
-          moveActorAway(actor, this.ctx.player.x, this.ctx.player.y, actor.stats.moveSpeed * 0.9, delta, zoneW, zoneH);
+          moveActorAway(actor, this.ctx.player.x, this.ctx.player.y, effectiveSpeed * 0.9, delta, zoneW, zoneH);
         } else {
-          moveActorTowards(actor, this.ctx.player.x, this.ctx.player.y, actor.stats.moveSpeed, delta, zoneW, zoneH);
+          moveActorTowards(actor, this.ctx.player.x, this.ctx.player.y, effectiveSpeed, delta, zoneW, zoneH);
         }
       }
 
@@ -81,8 +93,12 @@ export class AISystem {
   fireEnemyProjectile(actor: ActorState, definition: EnemyDefinition): void {
     const angle = Phaser.Math.Angle.Between(actor.x, actor.y, this.ctx.player.x, this.ctx.player.y);
     const speed = definition.archetype === "boss" ? 240 : 210;
-    const damageType: DamageType = definition.archetype === "ranged" || definition.archetype === "boss" ? "fire" : "physical";
-    const projectile: ProjectileState = {
+
+    // Frost Wraith fires chill projectiles (physical type + chill)
+    const isFrostWraith = definition.id === "frostWraith";
+    const damageType: DamageType = isFrostWraith ? "physical" : (definition.archetype === "ranged" || definition.archetype === "boss") ? "fire" : "physical";
+
+    const projectile: ProjectileState & { appliesChill?: boolean } = {
       id: Phaser.Math.RND.uuid(),
       x: actor.x,
       y: actor.y,
@@ -95,6 +111,7 @@ export class AISystem {
       damageMax: definition.contactDamageMax + (definition.archetype === "boss" ? 4 : 0),
       damageType,
       expiresAt: this.ctx.scene.time.now + 4000,
+      appliesChill: isFrostWraith,
     };
     this.ctx.projectiles.set(projectile.id, projectile);
   }

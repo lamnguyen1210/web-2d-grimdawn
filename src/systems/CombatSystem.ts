@@ -24,6 +24,7 @@ export const PLAYER_BASE_STATS = createStatBlock({
   critMultiplier: 1.6,
   physicalResistance: 0.05,
   fireResistance: 0.05,
+  poisonResistance: 0.03,
 });
 
 export const LEVEL_THRESHOLDS = [0, 70, 180, 360, 580];
@@ -41,25 +42,36 @@ export class CombatSystem {
     }
     const rolled = Phaser.Math.Between(Math.round(min), Math.round(max));
     const crit = Math.random() < source.stats.critChance;
-    let amount = rolled + (damageType === "physical" ? source.stats.physicalDamageMin / 6 : source.stats.fireDamageMin / 4);
+    let amount = rolled + (damageType === "physical" ? source.stats.physicalDamageMin / 6 : damageType === "fire" ? source.stats.fireDamageMin / 4 : source.stats.physicalDamageMin / 5);
     if (crit) {
       amount *= source.stats.critMultiplier;
     }
     if (damageType === "physical") {
       amount = amount * (1 - Phaser.Math.Clamp(target.stats.physicalResistance, 0, 0.75));
       amount -= target.stats.armor * 0.25;
-    } else {
+    } else if (damageType === "fire") {
       amount = amount * (1 - Phaser.Math.Clamp(target.stats.fireResistance, 0, 0.75));
+    } else {
+      amount = amount * (1 - Phaser.Math.Clamp(target.stats.poisonResistance, 0, 0.75));
     }
     amount = Math.max(1, Math.round(amount));
     target.health = Math.max(0, target.health - amount);
     target.bodyHitUntil = this.ctx.scene.time.now;
+
+    const color = damageType === "fire" ? "#ff9d73" : damageType === "poison" ? "#8bef6a" : "#f0e6d2";
+    const fontSize = crit ? 18 : 14;
     this.render.spawnFloatingText(
       target.x,
       target.y - target.radius - 8,
       `${crit ? "CRIT " : ""}${amount}`,
-      damageType === "fire" ? "#ff9d73" : "#f0e6d2",
+      color,
+      fontSize,
     );
+
+    if (crit) {
+      this.render.shakeCamera(3, 80);
+    }
+
     if (!silent) {
       this.ctx.log(`${source.name} deals ${amount} ${damageType} to ${target.name}.`);
     }
@@ -75,16 +87,30 @@ export class CombatSystem {
     target.status.nextBurnTickAt = time + 1000;
   }
 
+  applyPoison(target: ActorState, time: number, damageMin: number, damageMax: number): void {
+    target.status.poisonedUntil = time + 4000;
+    target.status.poisonDamageMin = Math.max(target.status.poisonDamageMin, damageMin);
+    target.status.poisonDamageMax = Math.max(target.status.poisonDamageMax, damageMax);
+    target.status.nextPoisonTickAt = time + 1200;
+  }
+
+  applyChill(target: ActorState, time: number, factor: number): void {
+    target.status.chilledUntil = time + 3000;
+    target.status.chillFactor = Math.min(0.6, Math.max(target.status.chillFactor, factor));
+  }
+
   handleDeath(source: ActorState, target: ActorState): void {
     target.alive = false;
     target.health = 0;
     target.targetId = undefined;
     target.moveTarget = undefined;
+    target.deathAnimatedUntil = this.ctx.scene.time.now + 1200;
     if (target.faction === "enemy") {
       const definition = enemyDefinitions[target.definitionId!];
       this.gainXp(definition.xpReward);
       this.loot.dropRewards(target, definition.id);
       this.ctx.log(`${target.name} falls.`);
+      this.render.spawnFloatingText(target.x, target.y - target.radius - 24, `+${definition.xpReward} XP`, "#f5d56b");
       const encounterId = target.encounterId;
       if (encounterId) {
         const aliveInEncounter = [...this.ctx.actors.values()].some((actor) => actor.alive && actor.encounterId === encounterId);
@@ -97,6 +123,7 @@ export class CombatSystem {
         this.ctx.inventory.gold += 80;
         this.ctx.inventory.potions += 2;
         this.ctx.log("Boss defeated. The crossroads route is secure.");
+        this.render.shakeCamera(6, 200);
         this.ctx.autosave();
       }
     } else {
@@ -114,6 +141,17 @@ export class CombatSystem {
       actor.status.nextBurnTickAt = time + 1000;
       const source = actor.faction === "player" ? actor : this.ctx.player;
       this.applyDamage(source, actor, actor.status.burnDamageMin, actor.status.burnDamageMax, "fire", true);
+    }
+  }
+
+  updatePoison(time: number): void {
+    for (const actor of this.ctx.actors.values()) {
+      if (!actor.alive || actor.status.poisonedUntil <= time || actor.status.nextPoisonTickAt > time) {
+        continue;
+      }
+      actor.status.nextPoisonTickAt = time + 1200;
+      const source = actor.faction === "player" ? actor : this.ctx.player;
+      this.applyDamage(source, actor, actor.status.poisonDamageMin, actor.status.poisonDamageMax, "poison", true);
     }
   }
 
@@ -146,7 +184,8 @@ export class CombatSystem {
       this.ctx.nextLevelXp = LEVEL_THRESHOLDS[this.ctx.level] ?? LEVEL_THRESHOLDS.at(-1)!;
       this.recalculatePlayerStats(true);
       this.ctx.log(`Level up. You are now level ${this.ctx.level}.`);
-      this.render.spawnFloatingText(this.ctx.player.x, this.ctx.player.y - 56, `Level ${this.ctx.level}`, "#f5d56b");
+      this.render.spawnFloatingText(this.ctx.player.x, this.ctx.player.y - 56, `Level ${this.ctx.level}`, "#f5d56b", 20);
+      this.render.shakeCamera(4, 120);
       this.ctx.autosave();
     }
   }
@@ -200,6 +239,9 @@ export class CombatSystem {
       if (hitTarget) {
         if (projectile.faction === "player") {
           this.applyDamage(this.ctx.player, hitTarget, projectile.damageMin, projectile.damageMax, projectile.damageType);
+          if (projectile.damageType === "poison") {
+            this.applyPoison(hitTarget, time, 3, 5);
+          }
         } else {
           this.applyDamage(
             [...this.ctx.actors.values()].find((actor) => actor.id === projectile.sourceId) ?? this.ctx.player,
@@ -210,6 +252,9 @@ export class CombatSystem {
           );
           if (projectile.damageType === "fire") {
             this.applyBurn(hitTarget, time, 4, 7);
+          }
+          if (projectile.damageType === "physical" && (projectile as ProjectileState & { appliesChill?: boolean }).appliesChill) {
+            this.applyChill(hitTarget, time, 0.35);
           }
         }
         this.destroyProjectile(id);
@@ -236,6 +281,7 @@ export class CombatSystem {
       }
       if (time >= hazard.nextTickAt) {
         hazard.nextTickAt = time + hazard.tickEveryMs;
+        const hazDmgType = hazard.damageType ?? "fire";
         const enemies = [...this.ctx.actors.values()].filter(
           (actor) =>
             actor.faction === "enemy" &&
@@ -244,19 +290,23 @@ export class CombatSystem {
             Phaser.Math.Distance.Between(actor.x, actor.y, hazard.x, hazard.y) <= hazard.radius + actor.radius,
         );
         for (const enemy of enemies) {
-          this.applyDamage(this.ctx.player, enemy, hazard.damageMin, hazard.damageMax, "fire");
-          this.applyBurn(enemy, time, Math.max(1, hazard.damageMin - 1), Math.max(2, hazard.damageMax - 1));
+          this.applyDamage(this.ctx.player, enemy, hazard.damageMin, hazard.damageMax, hazDmgType);
+          if (hazDmgType === "fire") {
+            this.applyBurn(enemy, time, Math.max(1, hazard.damageMin - 1), Math.max(2, hazard.damageMax - 1));
+          }
         }
         if (Phaser.Math.Distance.Between(this.ctx.player.x, this.ctx.player.y, hazard.x, hazard.y) <= hazard.radius + this.ctx.player.radius) {
           const boss = [...this.ctx.actors.values()].find((actor) => actor.isBoss && actor.alive) ?? this.ctx.player;
-          this.applyDamage(boss, this.ctx.player, hazard.damageMin, hazard.damageMax, "fire");
-          this.applyBurn(this.ctx.player, time, Math.max(1, hazard.damageMin - 2), Math.max(2, hazard.damageMax - 2));
+          this.applyDamage(boss, this.ctx.player, hazard.damageMin, hazard.damageMax, hazDmgType);
+          if (hazDmgType === "fire") {
+            this.applyBurn(this.ctx.player, time, Math.max(1, hazard.damageMin - 2), Math.max(2, hazard.damageMax - 2));
+          }
         }
       }
     }
   }
 
-  createHazard(x: number, y: number, radius: number, expiresAt: number, tickEveryMs: number, damageMin: number, damageMax: number): void {
+  createHazard(x: number, y: number, radius: number, expiresAt: number, tickEveryMs: number, damageMin: number, damageMax: number, damageType?: DamageType): void {
     const id = Phaser.Math.RND.uuid();
     this.ctx.hazards.set(id, {
       x,
@@ -267,6 +317,7 @@ export class CombatSystem {
       nextTickAt: this.ctx.scene.time.now + 120,
       damageMin,
       damageMax,
+      damageType,
     });
   }
 

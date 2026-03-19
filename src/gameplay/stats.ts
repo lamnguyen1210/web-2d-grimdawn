@@ -16,6 +16,7 @@ export const createStatBlock = (overrides: PartialStats): StatBlock => ({
   critMultiplier: overrides.critMultiplier ?? 1.5,
   physicalResistance: overrides.physicalResistance ?? 0,
   fireResistance: overrides.fireResistance ?? 0,
+  poisonResistance: overrides.poisonResistance ?? 0,
 });
 
 export const cloneStats = (stats: StatBlock): StatBlock => createStatBlock(stats);
@@ -38,6 +39,7 @@ export const addStats = (...blocks: PartialStats[]): StatBlock => {
     result.critMultiplier += (block.critMultiplier ?? 1.5) - 1.5;
     result.physicalResistance += block.physicalResistance ?? 0;
     result.fireResistance += block.fireResistance ?? 0;
+    result.poisonResistance += block.poisonResistance ?? 0;
   }
   if (result.critMultiplier === 0) {
     result.critMultiplier = 1.5;

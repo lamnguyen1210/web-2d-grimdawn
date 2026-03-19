@@ -47,7 +47,7 @@ src/
     RenderSystem.ts # All Phaser rendering: actors, pickups, hazards, HUD, effects
     LootSystem.ts   # Pickup logic, item rolling, chest opening
     CombatSystem.ts # Damage, burn, death, XP, stats, projectiles, hazards
-    SkillSystem.ts  # Cleave Shot, Fire Bomb, resource checks
+    SkillSystem.ts  # Cleave Shot, Fire Bomb, Frost Nova, Venom Shot, resource checks
     ZoneSystem.ts   # Zone spawning, transitions, state reset
     AISystem.ts     # Enemy AI loop, enemy projectile firing
   scenes/

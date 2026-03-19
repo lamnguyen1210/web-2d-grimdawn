@@ -25,7 +25,7 @@ export class ZoneSystem {
         this.spawnEnemy(spawn.enemyId, spawn.x, spawn.y, encounter);
       }
       if (encounter.chest) {
-        this.spawnChest(encounter.id, 910, 560);
+        this.spawnChest(encounter.id, encounter.zoneId === "hollow" ? 1220 : 910, encounter.zoneId === "hollow" ? 1080 : 560);
       }
     }
   }
@@ -35,7 +35,9 @@ export class ZoneSystem {
     const level =
       encounter.zoneId === "arena"
         ? Math.max(2, this.ctx.level + (enemyId === "warden" ? 1 : 0))
-        : Math.max(1, this.ctx.level);
+        : encounter.zoneId === "hollow"
+          ? Math.max(2, this.ctx.level)
+          : Math.max(1, this.ctx.level);
     const stats = scaleStatsForLevel(definition.baseStats, level);
     const actor: ActorState = {
       id: `${enemyId}-${Phaser.Math.RND.uuid()}`,
@@ -61,6 +63,12 @@ export class ZoneSystem {
         burnDamageMin: 0,
         burnDamageMax: 0,
         nextBurnTickAt: 0,
+        poisonedUntil: 0,
+        poisonDamageMin: 0,
+        poisonDamageMax: 0,
+        nextPoisonTickAt: 0,
+        chilledUntil: 0,
+        chillFactor: 0,
       },
       isBoss: definition.archetype === "boss",
       phase: 1,
@@ -84,20 +92,19 @@ export class ZoneSystem {
   }
 
   checkTransitions(): void {
-    const transition = zoneDefinitions[this.ctx.activeZoneId].transition;
-    if (!transition) {
-      return;
+    const transitions = zoneDefinitions[this.ctx.activeZoneId].transitions;
+    for (const transition of transitions) {
+      const p = this.ctx.player;
+      const inside =
+        p.x >= transition.x &&
+        p.x <= transition.x + transition.width &&
+        p.y >= transition.y &&
+        p.y <= transition.y + transition.height;
+      if (inside) {
+        this.transitionToZone(transition.toZoneId, transition.targetX, transition.targetY);
+        return;
+      }
     }
-    const p = this.ctx.player;
-    const inside =
-      p.x >= transition.x &&
-      p.x <= transition.x + transition.width &&
-      p.y >= transition.y &&
-      p.y <= transition.y + transition.height;
-    if (!inside) {
-      return;
-    }
-    this.transitionToZone(transition.toZoneId, transition.targetX, transition.targetY);
   }
 
   transitionToZone(zoneId: ZoneId, x: number, y: number): void {
@@ -211,6 +218,16 @@ export class ZoneSystem {
       this.ctx.bossHealthBar.destroy();
       this.ctx.bossHealthBar = undefined;
     }
+
+    // Clean up minimap
+    if (this.ctx.minimapBg) {
+      this.ctx.minimapBg.destroy();
+      this.ctx.minimapBg = undefined;
+    }
+    for (const dot of this.ctx.minimapDots) {
+      dot.destroy();
+    }
+    this.ctx.minimapDots = [];
 
     this.ctx.phaseTwoSummoned = false;
     this.ctx.skillCooldowns = {};

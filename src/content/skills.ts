@@ -28,4 +28,22 @@ export const skillDefinitions: Record<string, SkillDefinition> = {
     targetMode: "ground",
     description: "Throw an explosive flask that creates a burning hazard pool.",
   },
+  frostNova: {
+    id: "frostNova",
+    name: "Frost Nova",
+    cooldownMs: 4000,
+    energyCost: 18,
+    range: 120,
+    targetMode: "self",
+    description: "Unleash a freezing blast around yourself, chilling all nearby enemies.",
+  },
+  venomShot: {
+    id: "venomShot",
+    name: "Venom Shot",
+    cooldownMs: 3800,
+    energyCost: 14,
+    range: 200,
+    targetMode: "enemy",
+    description: "Fire a toxic bolt that poisons the target on impact.",
+  },
 };

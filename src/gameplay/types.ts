@@ -1,12 +1,12 @@
 import type Phaser from "phaser";
 
-export type DamageType = "physical" | "fire";
+export type DamageType = "physical" | "fire" | "poison";
 export type Faction = "player" | "enemy" | "neutral";
 export type EnemyArchetype = "rusher" | "ranged" | "bruiser" | "boss";
 export type ItemSlot = "weapon" | "chest" | "ring";
 export type ItemRarity = "common" | "magic" | "rare";
-export type SkillId = "basicAttack" | "cleaveShot" | "fireBomb";
-export type ZoneId = "crossroads" | "arena";
+export type SkillId = "basicAttack" | "cleaveShot" | "fireBomb" | "frostNova" | "venomShot";
+export type ZoneId = "crossroads" | "arena" | "hollow";
 
 export interface StatBlock {
   maxHealth: number;
@@ -24,6 +24,7 @@ export interface StatBlock {
   critMultiplier: number;
   physicalResistance: number;
   fireResistance: number;
+  poisonResistance: number;
 }
 
 export type PartialStats = Partial<StatBlock>;
@@ -102,6 +103,7 @@ export interface HazardState {
   nextTickAt: number;
   damageMin: number;
   damageMax: number;
+  damageType?: DamageType;
 }
 
 export interface ProjectileState {
@@ -124,6 +126,12 @@ export interface StatusState {
   burnDamageMin: number;
   burnDamageMax: number;
   nextBurnTickAt: number;
+  poisonedUntil: number;
+  poisonDamageMin: number;
+  poisonDamageMax: number;
+  nextPoisonTickAt: number;
+  chilledUntil: number;
+  chillFactor: number;
 }
 
 export interface ActorState {
@@ -151,6 +159,18 @@ export interface ActorState {
   isBoss?: boolean;
   phase?: number;
   bodyHitUntil?: number;
+  deathAnimatedUntil?: number;
+}
+
+export interface ZoneTransition {
+  toZoneId: ZoneId;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  targetX: number;
+  targetY: number;
+  label: string;
 }
 
 export interface ZoneDefinition {
@@ -160,16 +180,7 @@ export interface ZoneDefinition {
   height: number;
   playerSpawn: { x: number; y: number };
   encounters: EncounterDefinition[];
-  transition?: {
-    toZoneId: ZoneId;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    targetX: number;
-    targetY: number;
-    label: string;
-  };
+  transitions: ZoneTransition[];
 }
 
 export interface RuntimeInventory {

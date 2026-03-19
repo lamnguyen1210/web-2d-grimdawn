@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { skillDefinitions } from "../content/skills";
+import type { ProjectileState } from "../gameplay/types";
 import type { GameContext } from "./GameContext";
 import type { CombatSystem } from "./CombatSystem";
 import type { RenderSystem } from "./RenderSystem";
@@ -11,7 +12,7 @@ export class SkillSystem {
     private render: RenderSystem,
   ) {}
 
-  hasSkillResources(skillId: "cleaveShot" | "fireBomb"): boolean {
+  hasSkillResources(skillId: string): boolean {
     const skill = skillDefinitions[skillId];
     const cooldownUntil = this.ctx.skillCooldowns[skillId] ?? 0;
     if (cooldownUntil > this.ctx.scene.time.now) {
@@ -104,5 +105,79 @@ export class SkillSystem {
       this.render.spawnFloatingText(targetX, targetY - 36, "Fire Bomb", "#f09a62");
     });
     this.ctx.log("Fire Bomb lands and ignites the ground.");
+  }
+
+  tryCastFrostNova(): void {
+    if (!this.hasSkillResources("frostNova")) {
+      return;
+    }
+    this.ctx.player.energy -= skillDefinitions.frostNova.energyCost;
+    this.ctx.skillCooldowns.frostNova = this.ctx.scene.time.now + skillDefinitions.frostNova.cooldownMs;
+    const radius = skillDefinitions.frostNova.range;
+    const time = this.ctx.scene.time.now;
+
+    // Visual: expanding blue ring
+    const ring = this.ctx.scene.add.circle(this.ctx.player.x, this.ctx.player.y, 20, 0x66bbff, 0.15).setDepth(9);
+    ring.setStrokeStyle(3, 0x88ddff, 0.8);
+    this.ctx.scene.tweens.add({
+      targets: ring,
+      scale: radius / 20,
+      alpha: 0,
+      duration: 350,
+      ease: "Cubic.Out",
+      onComplete: () => ring.destroy(),
+    });
+
+    for (const actor of this.ctx.actors.values()) {
+      if (actor.faction !== "enemy" || !actor.alive || actor.zoneId !== this.ctx.activeZoneId) {
+        continue;
+      }
+      const distance = Phaser.Math.Distance.Between(this.ctx.player.x, this.ctx.player.y, actor.x, actor.y);
+      if (distance <= radius + actor.radius) {
+        this.combat.applyDamage(
+          this.ctx.player,
+          actor,
+          this.ctx.player.stats.physicalDamageMin + 3,
+          this.ctx.player.stats.physicalDamageMax + 5,
+          "physical",
+        );
+        this.combat.applyChill(actor, time, 0.4);
+      }
+    }
+    this.render.spawnFloatingText(this.ctx.player.x, this.ctx.player.y - 36, "Frost Nova", "#88ddff");
+    this.ctx.log("Frost Nova freezes the air around you.");
+  }
+
+  tryCastVenomShot(): void {
+    if (!this.hasSkillResources("venomShot")) {
+      return;
+    }
+    const targetPoint =
+      this.ctx.player.targetId && this.ctx.actors.get(this.ctx.player.targetId)
+        ? this.ctx.actors.get(this.ctx.player.targetId)!
+        : { x: this.ctx.lastPointerWorld.x || this.ctx.player.x + 1, y: this.ctx.lastPointerWorld.y || this.ctx.player.y };
+
+    this.ctx.player.energy -= skillDefinitions.venomShot.energyCost;
+    this.ctx.skillCooldowns.venomShot = this.ctx.scene.time.now + skillDefinitions.venomShot.cooldownMs;
+
+    const angle = Phaser.Math.Angle.Between(this.ctx.player.x, this.ctx.player.y, targetPoint.x, targetPoint.y);
+    const speed = 260;
+    const projectile: ProjectileState = {
+      id: Phaser.Math.RND.uuid(),
+      x: this.ctx.player.x,
+      y: this.ctx.player.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      radius: 7,
+      sourceId: this.ctx.player.id,
+      faction: "player",
+      damageMin: this.ctx.player.stats.physicalDamageMin + 4,
+      damageMax: this.ctx.player.stats.physicalDamageMax + 6,
+      damageType: "poison",
+      expiresAt: this.ctx.scene.time.now + 3000,
+    };
+    this.ctx.projectiles.set(projectile.id, projectile);
+    this.render.spawnFloatingText(this.ctx.player.x, this.ctx.player.y - 36, "Venom Shot", "#8bef6a");
+    this.ctx.log("Venom Shot streaks toward the target.");
   }
 }
