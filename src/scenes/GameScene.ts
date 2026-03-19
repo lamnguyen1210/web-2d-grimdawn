@@ -4,7 +4,7 @@ import { enemyDefinitions } from "../content/enemies";
 import { itemDefinitions } from "../content/items";
 import { skillDefinitions } from "../content/skills";
 import { zoneDefinitions } from "../content/zones";
-import { loadSave, writeSave } from "../gameplay/save";
+import { loadSave, resetSave, SAVE_VERSION, writeSave } from "../gameplay/save";
 import { addStats, createStatBlock, scaleStatsForLevel } from "../gameplay/stats";
 import type {
   ActorState,
@@ -18,6 +18,7 @@ import type {
   ProjectileState,
   RuntimeInventory,
   RuntimeStateSnapshot,
+  SaveGame,
   ZoneId,
   ZoneDefinition,
 } from "../gameplay/types";
@@ -201,8 +202,6 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.restoreOrStart();
-    this.createZoneVisuals();
-    this.syncActorViews();
     this.game.events.emit("ready");
   }
 
@@ -269,8 +268,47 @@ export class GameScene extends Phaser.Scene {
     return zoneDefinitions[this.activeZoneId];
   }
 
-  private restoreOrStart(): void {
-    const save = loadSave();
+  respawnPlayer(): void {
+    if (this.player.alive) {
+      return;
+    }
+
+    const zoneSpawn = zoneDefinitions[this.activeZoneId].playerSpawn;
+    const stats = this.buildPlayerStats();
+    const respawnSave: SaveGame = {
+      version: SAVE_VERSION,
+      zoneId: this.activeZoneId,
+      player: {
+        x: zoneSpawn.x,
+        y: zoneSpawn.y,
+        level: this.level,
+        xp: this.xp,
+        nextLevelXp: this.nextLevelXp,
+        health: stats.maxHealth,
+        energy: stats.maxEnergy,
+      },
+      inventory: this.inventory,
+      clearedEncounterIds: [...this.clearedEncounterIds],
+    };
+
+    this.restoreOrStart(respawnSave);
+    this.log("Respawned at the zone entrance.");
+  }
+
+  loadLastSaveState(): void {
+    this.restoreOrStart(loadSave());
+    this.log("Loaded the last autosave.");
+  }
+
+  startNewGame(): void {
+    resetSave();
+    this.restoreOrStart(null);
+    this.log("Started a new run.");
+  }
+
+  private restoreOrStart(saveOverride?: SaveGame | null): void {
+    const save = saveOverride === undefined ? loadSave() : saveOverride;
+    this.resetRuntimeState();
     this.inventory = save?.inventory ?? {
       gold: 18,
       potions: 3,
@@ -310,6 +348,9 @@ export class GameScene extends Phaser.Scene {
     };
     this.actors.set(this.player.id, this.player);
     this.spawnZone(this.activeZoneId);
+    this.createZoneVisuals();
+    this.syncActorViews();
+    this.overlayRect.setFillStyle(0x000000, 0);
   }
 
   private createZoneVisuals(): void {
@@ -1313,6 +1354,38 @@ export class GameScene extends Phaser.Scene {
     this.pickups.clear();
 
     this.phaseTwoSummoned = false;
+  }
+
+  private resetRuntimeState(): void {
+    this.clearZoneState();
+
+    for (const view of this.actorViews.values()) {
+      view.body.destroy();
+      view.shadow.destroy();
+      view.hpBar.destroy();
+      view.hpBarBg.destroy();
+      view.nameLabel.destroy();
+    }
+    this.actorViews.clear();
+    this.actors.clear();
+
+    for (const text of this.floatingTexts.values()) {
+      text.destroy();
+    }
+    this.floatingTexts.clear();
+
+    if (this.bossHealthBarBg) {
+      this.bossHealthBarBg.destroy();
+      this.bossHealthBarBg = undefined;
+    }
+    if (this.bossHealthBar) {
+      this.bossHealthBar.destroy();
+      this.bossHealthBar = undefined;
+    }
+
+    this.phaseTwoSummoned = false;
+    this.skillCooldowns = {};
+    this.overlayRect.setFillStyle(0x000000, 0);
   }
 
   private grantTestLoot(): void {

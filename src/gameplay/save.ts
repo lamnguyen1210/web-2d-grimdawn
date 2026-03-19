@@ -1,7 +1,7 @@
 import type { RuntimeStateSnapshot, SaveGame } from "./types";
 
 const SAVE_KEY = "web-2d-grimdawn-save";
-const SAVE_VERSION = 1;
+export const SAVE_VERSION = 1;
 
 export const loadSave = (): SaveGame | null => {
   try {

@@ -135,16 +135,30 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
           .reverse()
           .map((entry) => `<div class="log-entry">${entry}</div>`)
           .join("")
-      : `<div class="log-entry">The soldier has fallen. Refresh to restart from save or last autosave.</div>`;
+      : `
+          <div class="log-entry">The soldier has fallen.</div>
+          <div class="item-actions">
+            <button class="button" data-action="respawn">Respawn</button>
+            <button class="button" data-action="load-save">Load Last Save</button>
+            <button class="button" data-action="new-game">New Game</button>
+          </div>
+        `;
   };
 
   root.addEventListener("click", (event) => {
     const target = event.target as HTMLElement;
-    if (target.dataset.action !== "equip" || !target.dataset.itemId) {
+    const scene = game.scene.getScene("game") as GameScene;
+    if (target.dataset.action === "equip" && target.dataset.itemId) {
+      scene.equipItem(target.dataset.itemId);
+    } else if (target.dataset.action === "respawn") {
+      scene.respawnPlayer();
+    } else if (target.dataset.action === "load-save") {
+      scene.loadLastSaveState();
+    } else if (target.dataset.action === "new-game") {
+      scene.startNewGame();
+    } else {
       return;
     }
-    const scene = game.scene.getScene("game") as GameScene;
-    scene.equipItem(target.dataset.itemId);
     render();
   });
 
