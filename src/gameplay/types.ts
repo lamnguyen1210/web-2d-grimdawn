@@ -1,3 +1,5 @@
+import type Phaser from "phaser";
+
 export type DamageType = "physical" | "fire";
 export type Faction = "player" | "enemy" | "neutral";
 export type EnemyArchetype = "rusher" | "ranged" | "bruiser" | "boss";
@@ -201,4 +203,53 @@ export interface SaveGame {
   };
   inventory: RuntimeInventory;
   clearedEncounterIds: string[];
+}
+
+// ── Pickup types ─────────────────────────────────────────────────────────────
+
+export type PickupKind = "gold" | "potion" | "item" | "chest";
+
+export interface PickupState {
+  id: string;
+  kind: PickupKind;
+  x: number;
+  y: number;
+  value?: number;
+  item?: ItemInstance;
+  encounterId?: string;
+  label: string;
+}
+
+// ── Render view types (reference Phaser game objects) ────────────────────────
+
+export interface RenderActor {
+  body: Phaser.GameObjects.Arc;
+  shadow: Phaser.GameObjects.Ellipse;
+  hpBarBg: Phaser.GameObjects.Rectangle;
+  hpBar: Phaser.GameObjects.Rectangle;
+  nameLabel: Phaser.GameObjects.Text;
+}
+
+export interface RenderPickup {
+  sprite: Phaser.GameObjects.Rectangle | Phaser.GameObjects.Arc;
+  label: Phaser.GameObjects.Text;
+}
+
+export interface RenderHazard {
+  shape: Phaser.GameObjects.Arc;
+}
+
+export interface RenderProjectile {
+  shape: Phaser.GameObjects.Arc;
+}
+
+export interface RenderAttackEffect {
+  slash: Phaser.GameObjects.Rectangle;
+  impact: Phaser.GameObjects.Arc;
+  expiresAt: number;
+}
+
+export interface RenderClickPulse {
+  ring: Phaser.GameObjects.Arc;
+  expiresAt: number;
 }
