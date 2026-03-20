@@ -1,7 +1,7 @@
 import type { RuntimeStateSnapshot, SaveGame } from "./types";
 
 const SAVE_KEY = "web-2d-grimdawn-save";
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export const loadSave = (): SaveGame | null => {
   try {
@@ -35,6 +35,7 @@ export const writeSave = (snapshot: RuntimeStateSnapshot): void => {
     },
     inventory: snapshot.inventory,
     clearedEncounterIds: snapshot.clearedEncounterIds,
+    visitedZoneIds: snapshot.visitedZoneIds,
   };
   window.localStorage.setItem(SAVE_KEY, JSON.stringify(save));
 };

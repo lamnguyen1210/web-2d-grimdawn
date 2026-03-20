@@ -121,6 +121,7 @@ export class CombatSystem {
         const aliveInEncounter = [...this.ctx.actors.values()].some((actor) => actor.alive && actor.encounterId === encounterId);
         if (!aliveInEncounter) {
           this.ctx.clearedEncounterIds.add(encounterId);
+          this.ctx.checkQuestProgress();
           this.ctx.log(`Encounter cleared: ${encounterId.replaceAll("-", " ")}.`);
         }
       }

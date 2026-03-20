@@ -48,6 +48,7 @@ export interface GameContext {
   npcs: Map<string, NpcState>;
   npcViews: Map<string, RenderNpc>;
   isShopOpen: boolean;
+  visitedZoneIds: Set<ZoneId>;
   floatingTexts: Map<string, Phaser.GameObjects.Text>;
   attackEffects: Map<string, RenderAttackEffect>;
   clickPulse?: RenderClickPulse;
@@ -80,6 +81,7 @@ export interface GameContext {
   // Callback into GameScene for saving
   autosave: () => void;
   log: (msg: string) => void;
+  checkQuestProgress: () => void;
 }
 
 /** Convenience: current zone definition. */

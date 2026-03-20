@@ -177,6 +177,8 @@ export class ZoneSystem {
     this.render.createZoneVisuals();
     this.render.syncActorViews();
     this.render.syncNpcViews();
+    this.ctx.visitedZoneIds.add(zoneId);
+    this.ctx.checkQuestProgress();
     this.ctx.log(`Entered ${zoneDefinitions[zoneId].name}.`);
     this.ctx.autosave();
   }

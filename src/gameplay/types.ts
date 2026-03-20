@@ -237,6 +237,7 @@ export interface RuntimeStateSnapshot {
   player: ActorState;
   inventory: RuntimeInventory;
   clearedEncounterIds: string[];
+  visitedZoneIds: ZoneId[];
   level: number;
   xp: number;
   nextLevelXp: number;

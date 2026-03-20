@@ -10,6 +10,8 @@ import type {
   SaveGame,
   ZoneId,
 } from "../gameplay/types";
+import { questDefinitions } from "../content/quests";
+import { getActiveQuest, isObjectiveComplete, isQuestComplete } from "../gameplay/quests";
 import { AISystem } from "../systems/AISystem";
 import type { GameContext } from "../systems/GameContext";
 import { CombatSystem, LEVEL_THRESHOLDS } from "../systems/CombatSystem";
@@ -109,6 +111,7 @@ export class GameScene extends Phaser.Scene {
       npcs: new Map(),
       npcViews: new Map(),
       isShopOpen: false,
+      visitedZoneIds: new Set<ZoneId>(),
       floatingTexts: new Map(),
       attackEffects: new Map(),
       hudText,
@@ -126,6 +129,7 @@ export class GameScene extends Phaser.Scene {
       minimapDots: [],
       autosave: () => this.autosave(),
       log: (msg) => this.log(msg),
+      checkQuestProgress: () => this.checkQuestProgress(),
     };
 
     this.render = new RenderSystem(this.ctx);
@@ -176,6 +180,7 @@ export class GameScene extends Phaser.Scene {
       player: this.ctx.player,
       inventory: this.ctx.inventory,
       clearedEncounterIds: [...this.ctx.clearedEncounterIds],
+      visitedZoneIds: [...this.ctx.visitedZoneIds],
       level: this.ctx.level,
       xp: this.ctx.xp,
       nextLevelXp: this.ctx.nextLevelXp,
@@ -320,6 +325,7 @@ export class GameScene extends Phaser.Scene {
     this.ctx.nextLevelXp = save?.player.nextLevelXp ?? LEVEL_THRESHOLDS[this.ctx.level] ?? LEVEL_THRESHOLDS.at(-1)!;
     this.ctx.activeZoneId = (save?.zoneId ?? "crossroads") as ZoneId;
     this.ctx.clearedEncounterIds = new Set(save?.clearedEncounterIds ?? []);
+    this.ctx.visitedZoneIds = new Set((save?.visitedZoneIds ?? [this.ctx.activeZoneId]) as ZoneId[]);
 
     const playerStats = this.combat.buildPlayerStats();
     this.ctx.player = {
@@ -440,6 +446,33 @@ export class GameScene extends Phaser.Scene {
       const arrived = moveActorTowards(player, player.moveTarget.x, player.moveTarget.y, effectiveMoveSpeed, delta, zone.width, zone.height);
       if (arrived) {
         player.moveTarget = undefined;
+      }
+    }
+  }
+
+  getActiveQuestForUi(): { title: string; objectives: Array<{ description: string; done: boolean }> } | null {
+    if (!this.ctx) return null;
+    const active = getActiveQuest(questDefinitions, this.ctx.clearedEncounterIds, this.ctx.visitedZoneIds);
+    if (!active) return null;
+    return {
+      title: active.title,
+      objectives: active.objectives.map((obj) => ({
+        description: obj.description,
+        done: isObjectiveComplete(obj.type, obj.targetId, this.ctx.clearedEncounterIds, this.ctx.visitedZoneIds),
+      })),
+    };
+  }
+
+  private checkQuestProgress(): void {
+    for (const quest of questDefinitions) {
+      const completedKey = `quest-done-${quest.id}`;
+      if (
+        isQuestComplete(quest, this.ctx.clearedEncounterIds, this.ctx.visitedZoneIds) &&
+        !this.ctx.clearedEncounterIds.has(completedKey)
+      ) {
+        this.ctx.clearedEncounterIds.add(completedKey);
+        this.log(`Quest complete: ${quest.title}!`);
+        this.autosave();
       }
     }
   }
