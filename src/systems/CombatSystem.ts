@@ -83,18 +83,20 @@ export class CombatSystem {
     }
   }
 
-  applyBurn(target: ActorState, time: number, damageMin: number, damageMax: number): void {
+  applyBurn(target: ActorState, time: number, damageMin: number, damageMax: number, sourceId: string): void {
     target.status.burningUntil = time + 3200;
     target.status.burnDamageMin = Math.max(target.status.burnDamageMin, damageMin);
     target.status.burnDamageMax = Math.max(target.status.burnDamageMax, damageMax);
     target.status.nextBurnTickAt = time + 1000;
+    target.status.burnSourceId = sourceId;
   }
 
-  applyPoison(target: ActorState, time: number, damageMin: number, damageMax: number): void {
+  applyPoison(target: ActorState, time: number, damageMin: number, damageMax: number, sourceId: string): void {
     target.status.poisonedUntil = time + 4000;
     target.status.poisonDamageMin = Math.max(target.status.poisonDamageMin, damageMin);
     target.status.poisonDamageMax = Math.max(target.status.poisonDamageMax, damageMax);
     target.status.nextPoisonTickAt = time + 1200;
+    target.status.poisonSourceId = sourceId;
   }
 
   applyChill(target: ActorState, time: number, factor: number): void {
@@ -142,7 +144,7 @@ export class CombatSystem {
         continue;
       }
       actor.status.nextBurnTickAt = time + 1000;
-      const source = actor.faction === "player" ? actor : this.ctx.player;
+      const source = this.ctx.actors.get(actor.status.burnSourceId) ?? this.ctx.player;
       this.applyDamage(source, actor, actor.status.burnDamageMin, actor.status.burnDamageMax, "fire", true);
     }
   }
@@ -153,7 +155,7 @@ export class CombatSystem {
         continue;
       }
       actor.status.nextPoisonTickAt = time + 1200;
-      const source = actor.faction === "player" ? actor : this.ctx.player;
+      const source = this.ctx.actors.get(actor.status.poisonSourceId) ?? this.ctx.player;
       this.applyDamage(source, actor, actor.status.poisonDamageMin, actor.status.poisonDamageMax, "poison", true);
     }
   }
@@ -243,7 +245,7 @@ export class CombatSystem {
         if (projectile.faction === "player") {
           this.applyDamage(this.ctx.player, hitTarget, projectile.damageMin, projectile.damageMax, projectile.damageType);
           if (projectile.damageType === "poison") {
-            this.applyPoison(hitTarget, time, 3, 5);
+            this.applyPoison(hitTarget, time, 3, 5, this.ctx.player.id);
           }
         } else {
           this.applyDamage(
@@ -254,7 +256,7 @@ export class CombatSystem {
             projectile.damageType,
           );
           if (projectile.damageType === "fire") {
-            this.applyBurn(hitTarget, time, 4, 7);
+            this.applyBurn(hitTarget, time, 4, 7, projectile.sourceId);
           }
           if (projectile.damageType === "physical" && (projectile as ProjectileState & { appliesChill?: boolean }).appliesChill) {
             this.applyChill(hitTarget, time, 0.35);
@@ -295,14 +297,14 @@ export class CombatSystem {
         for (const enemy of enemies) {
           this.applyDamage(this.ctx.player, enemy, hazard.damageMin, hazard.damageMax, hazDmgType);
           if (hazDmgType === "fire") {
-            this.applyBurn(enemy, time, Math.max(1, hazard.damageMin - 1), Math.max(2, hazard.damageMax - 1));
+            this.applyBurn(enemy, time, Math.max(1, hazard.damageMin - 1), Math.max(2, hazard.damageMax - 1), this.ctx.player.id);
           }
         }
         if (Phaser.Math.Distance.Between(this.ctx.player.x, this.ctx.player.y, hazard.x, hazard.y) <= hazard.radius + this.ctx.player.radius) {
           const boss = [...this.ctx.actors.values()].find((actor) => actor.isBoss && actor.alive) ?? this.ctx.player;
           this.applyDamage(boss, this.ctx.player, hazard.damageMin, hazard.damageMax, hazDmgType);
           if (hazDmgType === "fire") {
-            this.applyBurn(this.ctx.player, time, Math.max(1, hazard.damageMin - 2), Math.max(2, hazard.damageMax - 2));
+            this.applyBurn(this.ctx.player, time, Math.max(1, hazard.damageMin - 2), Math.max(2, hazard.damageMax - 2), boss.id);
           }
         }
       }

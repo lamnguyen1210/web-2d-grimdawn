@@ -71,7 +71,7 @@ export class AISystem {
           }
           // Plague Stalker applies poison on contact
           if (definition.id === "plagueStalker") {
-            this.combat.applyPoison(this.ctx.player, time, 2, 4);
+            this.combat.applyPoison(this.ctx.player, time, 2, 4, actor.id);
           }
         }
       } else if (actor.aiState === "chase") {

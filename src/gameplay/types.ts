@@ -126,10 +126,12 @@ export interface StatusState {
   burnDamageMin: number;
   burnDamageMax: number;
   nextBurnTickAt: number;
+  burnSourceId: string;
   poisonedUntil: number;
   poisonDamageMin: number;
   poisonDamageMax: number;
   nextPoisonTickAt: number;
+  poisonSourceId: string;
   chilledUntil: number;
   chillFactor: number;
 }
