@@ -10,6 +10,21 @@ export type ZoneId = "crossroads" | "arena" | "hollow" | "ashveil" | "deepmire" 
 
 export type NpcKind = "merchant" | "healer";
 
+export type QuestObjectiveType = "kill_encounter" | "open_chest" | "enter_zone";
+
+export interface QuestObjective {
+  id: string;
+  description: string;
+  type: QuestObjectiveType;
+  targetId: string;
+}
+
+export interface QuestDefinition {
+  id: string;
+  title: string;
+  objectives: QuestObjective[];
+}
+
 export interface NpcState {
   id: string;
   kind: NpcKind;
@@ -241,6 +256,7 @@ export interface SaveGame {
   };
   inventory: RuntimeInventory;
   clearedEncounterIds: string[];
+  visitedZoneIds?: string[];
 }
 
 // ── Pickup types ─────────────────────────────────────────────────────────────
