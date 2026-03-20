@@ -92,7 +92,9 @@ export class SkillSystem {
       duration: delay,
       onComplete: () => marker.destroy(),
     });
-    this.ctx.scene.time.delayedCall(delay, () => {
+    const timer = this.ctx.scene.time.delayedCall(delay, () => {
+      const idx = this.ctx.pendingTimers.indexOf(timer);
+      if (idx !== -1) this.ctx.pendingTimers.splice(idx, 1);
       this.combat.createHazard(
         targetX,
         targetY,
@@ -104,6 +106,7 @@ export class SkillSystem {
       );
       this.render.spawnFloatingText(targetX, targetY - 36, "Fire Bomb", "#f09a62");
     });
+    this.ctx.pendingTimers.push(timer);
     this.ctx.log("Fire Bomb lands and ignites the ground.");
   }
 

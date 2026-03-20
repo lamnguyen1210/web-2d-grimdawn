@@ -67,6 +67,7 @@ export interface GameContext {
   godMode: boolean;
   combatLog: string[];
   combatLogTexts: Phaser.GameObjects.Text[];
+  pendingTimers: Phaser.Time.TimerEvent[];
 
   // Pointer position (updated by GameScene input listeners)
   lastPointerWorld: Phaser.Math.Vector2;

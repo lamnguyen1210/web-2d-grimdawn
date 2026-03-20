@@ -114,6 +114,7 @@ export class GameScene extends Phaser.Scene {
       godMode: false,
       combatLog,
       combatLogTexts: [],
+      pendingTimers: [],
       lastPointerWorld,
       minimapDots: [],
       autosave: () => this.autosave(),

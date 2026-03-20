@@ -124,6 +124,11 @@ export class ZoneSystem {
   }
 
   clearZoneState(): void {
+    for (const timer of this.ctx.pendingTimers) {
+      timer.remove(false);
+    }
+    this.ctx.pendingTimers = [];
+
     for (const [id, actor] of [...this.ctx.actors.entries()]) {
       if (id === this.ctx.player.id) {
         continue;
