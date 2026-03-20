@@ -498,3 +498,66 @@ input {
   font-size: 0.68rem;
   color: inherit;
 }
+
+/* ── Talent panel ────────────────────────────────────────────────────────── */
+
+.popup-talent-points {
+  font-size: 0.78rem;
+  color: #f2c680;
+  margin-bottom: 4px;
+}
+
+.popup-talents {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.talent-theme-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7a6d60;
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+
+.talent-card {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.talent-card.is-unlocked {
+  background: rgba(100, 160, 80, 0.1);
+  border: 1px solid rgba(100, 160, 80, 0.25);
+}
+
+.talent-card-name {
+  font-size: 0.78rem;
+  color: #f0e6d2;
+  font-weight: 600;
+}
+
+.talent-card-desc {
+  font-size: 0.70rem;
+  color: #c7b398;
+}
+
+.talent-btn {
+  margin-top: 4px;
+  align-self: flex-start;
+  font-size: 0.72rem;
+  padding: 4px 10px;
+}
+
+.talent-unlocked-badge {
+  margin-top: 4px;
+  font-size: 0.70rem;
+  color: #7abf7a;
+}

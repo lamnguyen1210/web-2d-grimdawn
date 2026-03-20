@@ -1,4 +1,5 @@
 import { createGame } from "../engine/game";
+import { talentDefinitions } from "../content/talents";
 import type { RuntimeStateSnapshot } from "../gameplay/types";
 import { GameScene } from "../scenes/GameScene";
 
@@ -83,6 +84,11 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
               <h2 class="inventory-popup-title">Inventory</h2>
               <div id="popup-inventory" class="popup-inventory"></div>
             </div>
+            <div class="inventory-popup-col">
+              <h2 class="inventory-popup-title">Talents</h2>
+              <div id="popup-talent-points" class="popup-talent-points"></div>
+              <div id="popup-talents" class="popup-talents"></div>
+            </div>
           </div>
         </div>
         <div id="quest-tracker" class="quest-tracker"></div>
@@ -118,6 +124,8 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
   const popupStats = root.querySelector<HTMLElement>("#popup-stats")!;
   const popupEquipment = root.querySelector<HTMLElement>("#popup-equipment")!;
   const popupInventory = root.querySelector<HTMLElement>("#popup-inventory")!;
+  const popupTalentPoints = root.querySelector<HTMLElement>("#popup-talent-points")!;
+  const popupTalents = root.querySelector<HTMLElement>("#popup-talents")!;
   const questTracker = root.querySelector<HTMLElement>("#quest-tracker")!;
   const shopPopup = root.querySelector<HTMLElement>("#shop-popup")!;
   const shopGold = root.querySelector<HTMLElement>("#shop-gold")!;
@@ -187,6 +195,31 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
                 `,
               )
               .join("");
+      // Talent panel
+      const talentSnap = scene.getTalentSnapshot();
+      popupTalentPoints.textContent = `Available points: ${talentSnap.points}`;
+      const themes = ["combat", "survival", "elemental"] as const;
+      popupTalents.innerHTML = themes.map((theme) => {
+        const nodes = talentDefinitions.filter((t) => t.theme === theme);
+        return `
+          <div class="talent-theme-label">${theme.toUpperCase()}</div>
+          ${nodes.map((t) => {
+            const unlocked = talentSnap.spent.has(t.id);
+            return `
+              <div class="talent-card${unlocked ? " is-unlocked" : ""}">
+                <div class="talent-card-name">${t.name}</div>
+                <div class="talent-card-desc">${t.description}</div>
+                ${!unlocked
+                  ? `<button class="button talent-btn" data-action="spend-talent" data-talent-id="${t.id}"
+                      ${talentSnap.points <= 0 ? 'disabled style="opacity:0.4;cursor:default"' : ""}>
+                      Unlock (1pt)
+                    </button>`
+                  : `<span class="talent-unlocked-badge">✓ Unlocked</span>`}
+              </div>
+            `;
+          }).join("")}
+        `;
+      }).join("");
     }
 
     // Quest tracker
@@ -297,6 +330,8 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
       scene.buyItem();
     } else if (control.dataset.action === "close-shop") {
       scene.closeShop();
+    } else if (control.dataset.action === "spend-talent" && control.dataset.talentId) {
+      scene.spendTalent(control.dataset.talentId);
     } else {
       return;
     }
