@@ -131,6 +131,7 @@ export class GameScene extends Phaser.Scene {
       this.ctx.lastPointerWorld.set(pointer.worldX, pointer.worldY);
     });
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (this.isPaused || !this.ctx.player?.alive) return;
       this.ctx.lastPointerWorld.set(pointer.worldX, pointer.worldY);
       if (pointer.rightButtonDown()) {
         this.skill.tryCastFireBomb(pointer.worldX, pointer.worldY);
