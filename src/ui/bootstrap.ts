@@ -2,6 +2,31 @@ import { createGame } from "../engine/game";
 import type { RuntimeStateSnapshot } from "../gameplay/types";
 import { GameScene } from "../scenes/GameScene";
 
+type GameMenuTab = "menu" | "controls";
+
+const controlSections: Array<{ title: string; items: Array<[string, string]> }> = [
+  {
+    title: "Mouse",
+    items: [
+      ["Left Click", "Move to ground or attack an enemy"],
+      ["Right Click", "Cast Fire Bomb"],
+    ],
+  },
+  {
+    title: "Keyboard",
+    items: [
+      ["W A S D", "Move"],
+      ["1", "Cleave Shot"],
+      ["2", "Fire Bomb"],
+      ["3", "Frost Nova"],
+      ["4", "Venom Shot"],
+      ["I", "Open or close inventory"],
+      ["Space", "Drink potion"],
+      ["Esc", "Pause or resume"],
+    ],
+  },
+];
+
 const formatModifierList = (snapshot: RuntimeStateSnapshot): string[] => {
   const weapon = snapshot.inventory.equipped.weapon;
   const chest = snapshot.inventory.equipped.chest;
@@ -41,7 +66,8 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
         <div id="game-menu" class="game-menu" style="display:none">
           <div class="game-menu-panel">
             <h2 id="game-menu-title" class="game-menu-title">PAUSED</h2>
-            <div id="game-menu-actions" class="game-menu-actions"></div>
+            <div id="game-menu-tabs" class="game-menu-tabs" style="display:none"></div>
+            <div id="game-menu-content" class="game-menu-content"></div>
           </div>
         </div>
         <div id="inventory-popup" class="inventory-popup" style="display:none">
@@ -66,11 +92,14 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
   const game = createGame(root.querySelector<HTMLElement>("#game-root")!);
   const gameMenu = root.querySelector<HTMLElement>("#game-menu")!;
   const gameMenuTitle = root.querySelector<HTMLElement>("#game-menu-title")!;
-  const gameMenuActions = root.querySelector<HTMLElement>("#game-menu-actions")!;
+  const gameMenuTabs = root.querySelector<HTMLElement>("#game-menu-tabs")!;
+  const gameMenuContent = root.querySelector<HTMLElement>("#game-menu-content")!;
   const inventoryPopup = root.querySelector<HTMLElement>("#inventory-popup")!;
   const popupStats = root.querySelector<HTMLElement>("#popup-stats")!;
   const popupEquipment = root.querySelector<HTMLElement>("#popup-equipment")!;
   const popupInventory = root.querySelector<HTMLElement>("#popup-inventory")!;
+  let activeMenuTab: GameMenuTab = "menu";
+  let wasMenuVisible = false;
 
   const render = (): void => {
     const scene = game.scene.getScene("game") as GameScene;
@@ -140,33 +169,81 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
     // Pause / death menu
     const dead = !snapshot.player.alive;
     const paused = scene.getIsPaused();
-    if (dead || paused) {
+    const menuVisible = dead || paused;
+    if (menuVisible && !wasMenuVisible) {
+      activeMenuTab = "menu";
+    }
+    wasMenuVisible = menuVisible;
+
+    if (menuVisible) {
       gameMenu.style.display = "flex";
       gameMenuTitle.textContent = dead ? "YOU DIED" : "PAUSED";
-      gameMenuActions.innerHTML = dead
-        ? `<button class="button" data-action="respawn">Respawn</button>
-           <button class="button" data-action="load-save">Load Last Save</button>
-           <button class="button" data-action="new-game">New Game</button>`
-        : `<button class="button" data-action="resume">Resume</button>
-           <button class="button" data-action="load-save">Load Last Save</button>
-           <button class="button" data-action="new-game">New Game</button>`;
+      gameMenuTabs.style.display = dead ? "none" : "grid";
+      gameMenuTabs.innerHTML = dead
+        ? ""
+        : `<button class="game-menu-tab${activeMenuTab === "menu" ? " is-active" : ""}" data-menu-tab="menu">Menu</button>
+           <button class="game-menu-tab${activeMenuTab === "controls" ? " is-active" : ""}" data-menu-tab="controls">Controls</button>`;
+      gameMenuContent.innerHTML =
+        dead || activeMenuTab === "menu"
+          ? `<div class="game-menu-actions">
+               ${dead ? '<button class="button" data-action="respawn">Respawn</button>' : '<button class="button" data-action="resume">Resume</button>'}
+               <button class="button" data-action="load-save">Load Last Save</button>
+               <button class="button" data-action="new-game">New Game</button>
+             </div>`
+          : `<div class="controls-guide">
+               ${controlSections
+                 .map(
+                   (section) => `
+                     <section class="controls-guide-section">
+                       <h3 class="controls-guide-title">${section.title}</h3>
+                       <div class="controls-guide-list">
+                         ${section.items
+                           .map(
+                             ([label, description]) => `
+                               <div class="controls-guide-item">
+                                 <span class="controls-guide-key">${label}</span>
+                                 <span class="controls-guide-description">${description}</span>
+                               </div>
+                             `,
+                           )
+                           .join("")}
+                       </div>
+                     </section>
+                   `,
+                 )
+                 .join("")}
+             </div>`;
     } else {
       gameMenu.style.display = "none";
+      activeMenuTab = "menu";
     }
   };
 
-  root.addEventListener("click", (event) => {
+  root.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) {
+      return;
+    }
     const target = event.target as HTMLElement;
+    const control = target.closest<HTMLElement>("[data-action], [data-menu-tab]");
+    if (!control) {
+      return;
+    }
+    event.preventDefault();
     const scene = game.scene.getScene("game") as GameScene;
-    if (target.dataset.action === "equip" && target.dataset.itemId) {
-      scene.equipItem(target.dataset.itemId);
-    } else if (target.dataset.action === "resume") {
+    if (control.dataset.menuTab === "menu" || control.dataset.menuTab === "controls") {
+      activeMenuTab = control.dataset.menuTab;
+      render();
+      return;
+    }
+    if (control.dataset.action === "equip" && control.dataset.itemId) {
+      scene.equipItem(control.dataset.itemId);
+    } else if (control.dataset.action === "resume") {
       scene.resumeGame();
-    } else if (target.dataset.action === "respawn") {
+    } else if (control.dataset.action === "respawn") {
       scene.respawnPlayer();
-    } else if (target.dataset.action === "load-save") {
+    } else if (control.dataset.action === "load-save") {
       scene.loadLastSaveState();
-    } else if (target.dataset.action === "new-game") {
+    } else if (control.dataset.action === "new-game") {
       scene.startNewGame();
     } else {
       return;
