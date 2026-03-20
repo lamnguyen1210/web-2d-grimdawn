@@ -14,7 +14,7 @@ export const PLAYER_BASE_STATS = createStatBlock({
   maxEnergy: 80,
   energyRegen: 5.5,
   armor: 10,
-  moveSpeed: 164,
+  moveSpeed: 164 * 2,
   attackSpeed: 1,
   physicalDamageMin: 8,
   physicalDamageMax: 12,
@@ -123,6 +123,9 @@ export class CombatSystem {
           this.ctx.clearedEncounterIds.add(encounterId);
           this.ctx.log(`Encounter cleared: ${encounterId.replaceAll("-", " ")}.`);
         }
+      }
+      if (target.eliteModifier === "volatile") {
+        this.triggerVolatileExplosion(target);
       }
       if (target.isBoss) {
         this.ctx.inventory.gold += 80;
@@ -324,6 +327,15 @@ export class CombatSystem {
       damageMax,
       damageType,
     });
+  }
+
+  private triggerVolatileExplosion(source: ActorState): void {
+    const radius = 120;
+    this.ctx.log(`${source.name} detonates in a volatile explosion!`);
+    this.render.shakeCamera(4, 120);
+    if (Phaser.Math.Distance.Between(source.x, source.y, this.ctx.player.x, this.ctx.player.y) <= radius) {
+      this.applyDamage(source, this.ctx.player, 15, 25, "fire");
+    }
   }
 
   destroyProjectile(id: string): void {
