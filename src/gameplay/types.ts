@@ -6,7 +6,14 @@ export type EnemyArchetype = "rusher" | "ranged" | "bruiser" | "boss";
 export type ItemSlot = "weapon" | "chest" | "ring";
 export type ItemRarity = "common" | "magic" | "rare";
 export type SkillId = "basicAttack" | "cleaveShot" | "fireBomb" | "frostNova" | "venomShot";
-export type ZoneId = "crossroads" | "arena" | "hollow";
+export type ZoneId = "crossroads" | "arena" | "hollow" | "ashveil" | "deepmire";
+
+export type EliteModifier =
+  | "frenzied"
+  | "armored"
+  | "volatile"
+  | "regenerating"
+  | "empowered";
 
 export interface StatBlock {
   maxHealth: number;
@@ -86,6 +93,7 @@ export interface SpawnDefinition {
   enemyId: string;
   x: number;
   y: number;
+  elite?: EliteModifier;
 }
 
 export interface EncounterDefinition {
@@ -93,6 +101,8 @@ export interface EncounterDefinition {
   zoneId: ZoneId;
   spawns: SpawnDefinition[];
   chest?: boolean;
+  chestX?: number;
+  chestY?: number;
 }
 
 export interface HazardState {
@@ -161,6 +171,9 @@ export interface ActorState {
   status: StatusState;
   isBoss?: boolean;
   phase?: number;
+  isElite?: boolean;
+  eliteModifier?: EliteModifier;
+  attackCooldownMultiplier?: number;
   bodyHitUntil?: number;
   deathAnimatedUntil?: number;
 }
