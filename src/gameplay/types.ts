@@ -238,6 +238,8 @@ export interface RuntimeStateSnapshot {
   inventory: RuntimeInventory;
   clearedEncounterIds: string[];
   visitedZoneIds: ZoneId[];
+  talentPoints: number;
+  spentTalents: string[];
   level: number;
   xp: number;
   nextLevelXp: number;
@@ -258,6 +260,8 @@ export interface SaveGame {
   inventory: RuntimeInventory;
   clearedEncounterIds: string[];
   visitedZoneIds?: string[];
+  talentPoints?: number;
+  spentTalents?: string[];
 }
 
 // ── Pickup types ─────────────────────────────────────────────────────────────
