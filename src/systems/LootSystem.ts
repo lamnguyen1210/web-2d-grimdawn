@@ -48,7 +48,9 @@ export class LootSystem {
   }
 
   dropRewards(target: ActorState, enemyId: string): void {
-    const goldAmount = Phaser.Math.Between(enemyId === "warden" ? 22 : 6, enemyId === "warden" ? 40 : 18);
+    const isElite = target.isElite === true;
+    const baseGold = Phaser.Math.Between(enemyId === "warden" ? 22 : 6, enemyId === "warden" ? 40 : 18);
+    const goldAmount = isElite ? Math.round(baseGold * 1.5) : baseGold;
     this.createPickup({
       id: `gold-${Phaser.Math.RND.uuid()}`,
       kind: "gold",
@@ -70,7 +72,7 @@ export class LootSystem {
     }
 
     const itemChance = enemyId === "warden" ? 1 : enemyId === "bruiser" ? 0.48 : 0.28;
-    if (Math.random() < itemChance) {
+    if (isElite || Math.random() < itemChance) {
       const item = this.rollLoot(enemyId === "warden" ? "rare" : Math.random() < 0.45 ? "magic" : "common");
       this.createPickup({
         id: `item-${item.id}`,
