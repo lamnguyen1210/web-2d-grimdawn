@@ -40,6 +40,9 @@ export class CombatSystem {
     if (!target.alive) {
       return;
     }
+    if (this.ctx.godMode && target.id === "player") {
+      return;
+    }
     const rolled = Phaser.Math.Between(Math.round(min), Math.round(max));
     const crit = Math.random() < source.stats.critChance;
     let amount = rolled + (damageType === "physical" ? source.stats.physicalDamageMin / 6 : damageType === "fire" ? source.stats.fireDamageMin / 4 : source.stats.physicalDamageMin / 5);
