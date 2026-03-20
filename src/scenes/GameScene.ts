@@ -40,6 +40,9 @@ export class GameScene extends Phaser.Scene {
   private potionKey!: Phaser.Input.Keyboard.Key;
   private debugKey!: Phaser.Input.Keyboard.Key;
   private lootKey!: Phaser.Input.Keyboard.Key;
+  private escKey!: Phaser.Input.Keyboard.Key;
+  private godModeKey!: Phaser.Input.Keyboard.Key;
+  private isPaused = false;
 
   private isInventoryVisible = true;
   private lastSaveAt = 0;
@@ -65,6 +68,8 @@ export class GameScene extends Phaser.Scene {
     this.potionKey = this.input.keyboard!.addKey("SPACE");
     this.debugKey = this.input.keyboard!.addKey("F1");
     this.lootKey = this.input.keyboard!.addKey("F5");
+    this.escKey = this.input.keyboard!.addKey("ESC");
+    this.godModeKey = this.input.keyboard!.addKey("F2");
 
     const overlayRect = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0).setOrigin(0, 0).setScrollFactor(0).setDepth(80);
     const zoneText = this.add
@@ -223,8 +228,25 @@ export class GameScene extends Phaser.Scene {
     this.log("Started a new run.");
   }
 
+  getIsPaused(): boolean {
+    return this.isPaused;
+  }
+
+  resumeGame(): void {
+    this.isPaused = false;
+  }
+
   update(time: number, delta: number): void {
-    if (!this.ctx?.player?.alive) {
+    if (this.ctx?.player) {
+      if (Phaser.Input.Keyboard.JustDown(this.escKey) && this.ctx.player.alive) {
+        this.isPaused = !this.isPaused;
+      }
+      if (Phaser.Input.Keyboard.JustDown(this.godModeKey)) {
+        this.ctx.godMode = !this.ctx.godMode;
+        this.log(`God mode ${this.ctx.godMode ? "ON" : "OFF"}.`);
+      }
+    }
+    if (!this.ctx?.player?.alive || this.isPaused) {
       return;
     }
     this.handleKeys();
@@ -247,6 +269,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private restoreOrStart(saveOverride?: SaveGame | null): void {
+    this.isPaused = false;
     const save = saveOverride === undefined ? loadSave() : saveOverride;
     this.zone.resetRuntimeState();
 
