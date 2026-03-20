@@ -106,6 +106,7 @@ export class GameScene extends Phaser.Scene {
       skillCooldowns: {},
       phaseTwoSummoned: false,
       showDebug: false,
+      godMode: false,
       combatLog,
       lastPointerWorld,
       minimapDots: [],

@@ -64,7 +64,7 @@ export interface GameContext {
   skillCooldowns: Record<string, number>;
   phaseTwoSummoned: boolean;
   showDebug: boolean;
-  godMode: boolean;          // ← add this line
+  godMode: boolean;
   combatLog: string[];
 
   // Pointer position (updated by GameScene input listeners)
