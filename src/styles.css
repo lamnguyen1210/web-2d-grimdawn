@@ -208,3 +208,47 @@ input {
     min-height: 560px;
   }
 }
+
+.game-menu {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(9, 8, 7, 0.72);
+  backdrop-filter: blur(2px);
+}
+
+.game-menu-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 36px 48px;
+  border: 1px solid rgba(212, 166, 113, 0.25);
+  border-radius: 20px;
+  background: rgba(18, 14, 12, 0.95);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.game-menu-title {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f2c680;
+}
+
+.game-menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.game-menu-actions .button {
+  width: 100%;
+  text-align: center;
+  padding: 10px 20px;
+}

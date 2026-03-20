@@ -38,12 +38,18 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
     <div class="shell">
       <section class="viewport">
         <div id="game-root" class="game-root"></div>
+        <div id="game-menu" class="game-menu" style="display:none">
+          <div class="game-menu-panel">
+            <h2 id="game-menu-title" class="game-menu-title">PAUSED</h2>
+            <div id="game-menu-actions" class="game-menu-actions"></div>
+          </div>
+        </div>
       </section>
       <aside class="sidebar">
         <section class="panel">
           <h2>Field Report</h2>
           <div id="stats-grid" class="stat-grid"></div>
-          <p class="hint">Controls: left click move/attack, right click Fire Bomb, WASD override, 1 Cleave Shot, 2 Fire Bomb, 3 Frost Nova, 4 Venom Shot, I inventory, Space potion, F1 debug, F5 test loot.</p>
+          <p class="hint">Controls: left click move/attack, right click Fire Bomb, WASD override, 1 Cleave Shot, 2 Fire Bomb, 3 Frost Nova, 4 Venom Shot, I inventory, Space potion, Esc pause, F1 debug, F2 god mode, F5 test loot.</p>
         </section>
         <section class="panel">
           <h3>Equipment</h3>
@@ -68,6 +74,9 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
   const equipmentList = root.querySelector<HTMLDivElement>("#equipment-list")!;
   const equipmentSummary = root.querySelector<HTMLDivElement>("#equipment-summary")!;
   const logList = root.querySelector<HTMLDivElement>("#log-list")!;
+  const gameMenu = root.querySelector<HTMLElement>("#game-menu")!;
+  const gameMenuTitle = root.querySelector<HTMLElement>("#game-menu-title")!;
+  const gameMenuActions = root.querySelector<HTMLElement>("#game-menu-actions")!;
 
   const render = (): void => {
     const scene = game.scene.getScene("game") as GameScene;
@@ -129,21 +138,28 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
             )
             .join("");
 
-    logList.innerHTML = snapshot.player.alive
-      ? scene
-          .getCombatLog()
-          .slice(-8)
-          .reverse()
-          .map((entry) => `<div class="log-entry">${entry}</div>`)
-          .join("")
-      : `
-          <div class="log-entry">The soldier has fallen.</div>
-          <div class="item-actions">
-            <button class="button" data-action="respawn">Respawn</button>
-            <button class="button" data-action="load-save">Load Last Save</button>
-            <button class="button" data-action="new-game">New Game</button>
-          </div>
-        `;
+    logList.innerHTML = scene
+      .getCombatLog()
+      .slice(-8)
+      .reverse()
+      .map((entry) => `<div class="log-entry">${entry}</div>`)
+      .join("");
+
+    const dead = !snapshot.player.alive;
+    const paused = scene.getIsPaused();
+    if (dead || paused) {
+      gameMenu.style.display = "flex";
+      gameMenuTitle.textContent = dead ? "YOU DIED" : "PAUSED";
+      gameMenuActions.innerHTML = dead
+        ? `<button class="button" data-action="respawn">Respawn</button>
+           <button class="button" data-action="load-save">Load Last Save</button>
+           <button class="button" data-action="new-game">New Game</button>`
+        : `<button class="button" data-action="resume">Resume</button>
+           <button class="button" data-action="load-save">Load Last Save</button>
+           <button class="button" data-action="new-game">New Game</button>`;
+    } else {
+      gameMenu.style.display = "none";
+    }
   };
 
   root.addEventListener("click", (event) => {
@@ -151,6 +167,8 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
     const scene = game.scene.getScene("game") as GameScene;
     if (target.dataset.action === "equip" && target.dataset.itemId) {
       scene.equipItem(target.dataset.itemId);
+    } else if (target.dataset.action === "resume") {
+      scene.resumeGame();
     } else if (target.dataset.action === "respawn") {
       scene.respawnPlayer();
     } else if (target.dataset.action === "load-save") {
