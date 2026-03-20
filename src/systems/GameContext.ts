@@ -3,12 +3,14 @@ import type {
   ActorState,
   HazardState,
   ItemInstance,
+  NpcState,
   PickupState,
   ProjectileState,
   RenderActor,
   RenderAttackEffect,
   RenderClickPulse,
   RenderHazard,
+  RenderNpc,
   RenderPickup,
   RenderProjectile,
   RuntimeInventory,
@@ -43,6 +45,9 @@ export interface GameContext {
   projectileViews: Map<string, RenderProjectile>;
   hazardViews: Map<string, RenderHazard>;
   pickupViews: Map<string, RenderPickup>;
+  npcs: Map<string, NpcState>;
+  npcViews: Map<string, RenderNpc>;
+  isShopOpen: boolean;
   floatingTexts: Map<string, Phaser.GameObjects.Text>;
   attackEffects: Map<string, RenderAttackEffect>;
   clickPulse?: RenderClickPulse;
