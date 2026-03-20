@@ -16,7 +16,12 @@ export class RenderSystem {
     const zone = zoneDefinitions[this.ctx.activeZoneId];
     this.ctx.scene.cameras.main.setBounds(0, 0, zone.width, zone.height);
 
-    const bgColor = zone.id === "crossroads" ? 0x2d231f : zone.id === "hollow" ? 0x1f2d1f : 0x261d1a;
+    const bgColor =
+      zone.id === "crossroads" ? 0x2d231f :
+      zone.id === "hollow"     ? 0x1f2d1f :
+      zone.id === "ashveil"    ? 0x231e1a :
+      zone.id === "deepmire"   ? 0x1a2420 :
+                                 0x261d1a;
     const bg = this.ctx.scene.add.rectangle(
       zone.width / 2,
       zone.height / 2,
@@ -28,7 +33,12 @@ export class RenderSystem {
     bg.name = "zone-art";
     bg.setDepth(-5);
 
-    const patchColor = zone.id === "crossroads" ? 0x403226 : zone.id === "hollow" ? 0x2a4028 : 0x3b291f;
+    const patchColor =
+      zone.id === "crossroads" ? 0x403226 :
+      zone.id === "hollow"     ? 0x2a4028 :
+      zone.id === "ashveil"    ? 0x3a2a1a :
+      zone.id === "deepmire"   ? 0x243830 :
+                                 0x3b291f;
     for (let i = 0; i < 18; i += 1) {
       const x = 120 + i * 90;
       const y = 180 + (i % 4) * 180;
@@ -38,7 +48,12 @@ export class RenderSystem {
       patch.name = "zone-art";
     }
 
-    const roadColor = zone.id === "crossroads" ? 0x5c4a3c : zone.id === "hollow" ? 0x3d5c3a : 0x4b3830;
+    const roadColor =
+      zone.id === "crossroads" ? 0x5c4a3c :
+      zone.id === "hollow"     ? 0x3d5c3a :
+      zone.id === "ashveil"    ? 0x4a3a2a :
+      zone.id === "deepmire"   ? 0x364845 :
+                                 0x4b3830;
     const road = this.ctx.scene.add.rectangle(
       zone.width / 2,
       zone.height / 2,
