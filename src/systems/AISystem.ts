@@ -55,7 +55,7 @@ export class AISystem {
 
       // Chill slows attack cooldowns
       const chillMult = actor.status.chilledUntil > time ? 1 + actor.status.chillFactor : 1;
-      const effectiveCooldown = definition.attackCooldownMs * chillMult;
+      const effectiveCooldown = definition.attackCooldownMs * chillMult * (actor.attackCooldownMultiplier ?? 1);
 
       if (distance <= definition.attackRange && time >= actor.attackCooldownUntil) {
         actor.attackCooldownUntil = time + effectiveCooldown;
