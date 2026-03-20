@@ -44,39 +44,33 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
             <div id="game-menu-actions" class="game-menu-actions"></div>
           </div>
         </div>
+        <div id="inventory-popup" class="inventory-popup" style="display:none">
+          <div class="inventory-popup-panel">
+            <div class="inventory-popup-col">
+              <h2 class="inventory-popup-title">Field Report</h2>
+              <div id="popup-stats" class="popup-stats"></div>
+              <h2 class="inventory-popup-title">Equipment</h2>
+              <div id="popup-equipment" class="popup-equipment"></div>
+              <p class="popup-hint">I — close inventory</p>
+            </div>
+            <div class="inventory-popup-col">
+              <h2 class="inventory-popup-title">Inventory</h2>
+              <div id="popup-inventory" class="popup-inventory"></div>
+            </div>
+          </div>
+        </div>
       </section>
-      <aside class="sidebar">
-        <section class="panel">
-          <h2>Field Report</h2>
-          <div id="stats-grid" class="stat-grid"></div>
-          <p class="hint">Controls: left click move/attack, right click Fire Bomb, WASD override, 1 Cleave Shot, 2 Fire Bomb, 3 Frost Nova, 4 Venom Shot, I inventory, Space potion, Esc pause, F1 debug, F2 god mode, F5 test loot.</p>
-        </section>
-        <section class="panel">
-          <h3>Equipment</h3>
-          <div id="equipment-list" class="equipment-list"></div>
-          <div id="equipment-summary" class="controls-list"></div>
-        </section>
-        <section class="panel">
-          <h3>Inventory</h3>
-          <div id="inventory-list" class="inventory-list"></div>
-        </section>
-        <section class="panel">
-          <h3>Combat Log</h3>
-          <div id="log-list" class="log-list"></div>
-        </section>
-      </aside>
     </div>
   `;
 
   const game = createGame(root.querySelector<HTMLElement>("#game-root")!);
-  const statsGrid = root.querySelector<HTMLDivElement>("#stats-grid")!;
-  const inventoryList = root.querySelector<HTMLDivElement>("#inventory-list")!;
-  const equipmentList = root.querySelector<HTMLDivElement>("#equipment-list")!;
-  const equipmentSummary = root.querySelector<HTMLDivElement>("#equipment-summary")!;
-  const logList = root.querySelector<HTMLDivElement>("#log-list")!;
   const gameMenu = root.querySelector<HTMLElement>("#game-menu")!;
   const gameMenuTitle = root.querySelector<HTMLElement>("#game-menu-title")!;
   const gameMenuActions = root.querySelector<HTMLElement>("#game-menu-actions")!;
+  const inventoryPopup = root.querySelector<HTMLElement>("#inventory-popup")!;
+  const popupStats = root.querySelector<HTMLElement>("#popup-stats")!;
+  const popupEquipment = root.querySelector<HTMLElement>("#popup-equipment")!;
+  const popupInventory = root.querySelector<HTMLElement>("#popup-inventory")!;
 
   const render = (): void => {
     const scene = game.scene.getScene("game") as GameScene;
@@ -85,66 +79,62 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
       return;
     }
 
-    statsGrid.innerHTML = formatStats(snapshot)
-      .map(
-        ([label, value]) => `
-          <div class="stat">
-            <span class="stat-label">${label}</span>
-            <span class="stat-value">${value}</span>
-          </div>
-        `,
-      )
-      .join("");
+    // Inventory popup
+    const inventoryVisible = scene.getIsInventoryVisible();
+    inventoryPopup.style.display = inventoryVisible ? "flex" : "none";
 
-    equipmentList.innerHTML = (["weapon", "chest", "ring"] as const)
-      .map((slot) => {
-        const item = snapshot.inventory.equipped[slot];
-        return `
-          <div class="equip-card">
-            <div class="equip-top">
-              <span class="equip-name">${slot.toUpperCase()}</span>
-              <span class="equip-meta">${item ? item.rarity : "empty"}</span>
+    if (inventoryVisible) {
+      popupStats.innerHTML = formatStats(snapshot)
+        .map(
+          ([label, value]) => `
+            <div class="popup-stat">
+              <span class="popup-stat-label">${label}</span>
+              <span class="popup-stat-value">${value}</span>
             </div>
-            <div class="${item ? rarityClass(item.rarity) : ""}">${item?.name ?? "Empty slot"}</div>
-          </div>
-        `;
-      })
-      .join("");
+          `,
+        )
+        .join("");
 
-    equipmentSummary.innerHTML = formatModifierList(snapshot)
-      .map((line) => `<div class="log-entry">${line}</div>`)
-      .join("");
+      popupEquipment.innerHTML = (["weapon", "chest", "ring"] as const)
+        .map((slot) => {
+          const item = snapshot.inventory.equipped[slot];
+          return `
+            <div class="popup-equip-card">
+              <div class="popup-equip-top">
+                <span class="popup-equip-slot">${slot.toUpperCase()}</span>
+                <span class="popup-equip-rarity">${item ? item.rarity : "empty"}</span>
+              </div>
+              <div class="popup-equip-name ${item ? rarityClass(item.rarity) : ""}">${item?.name ?? "Empty slot"}</div>
+            </div>
+          `;
+        })
+        .join("");
 
-    inventoryList.innerHTML =
-      snapshot.inventory.items.length === 0
-        ? `<div class="log-entry">Inventory empty. Kill packs and open the chest in the crossroads.</div>`
-        : snapshot.inventory.items
-            .map(
-              (item) => `
-                <div class="item-card">
-                  <div class="item-top">
-                    <span class="item-name ${rarityClass(item.rarity)}">${item.name}</span>
-                    <span class="item-meta">${item.slot}</span>
+      popupInventory.innerHTML =
+        snapshot.inventory.items.length === 0
+          ? `<div style="font-size:0.82rem;color:#7a6d60">Inventory empty. Kill packs and open chests.</div>`
+          : snapshot.inventory.items
+              .map(
+                (item) => `
+                  <div class="popup-item-card">
+                    <div class="popup-item-top">
+                      <span class="popup-item-name ${rarityClass(item.rarity)}">${item.name}</span>
+                      <span class="popup-item-slot">${item.slot}</span>
+                    </div>
+                    <div class="popup-item-stats">${Object.entries(item.stats)
+                      .filter(([, value]) => typeof value === "number" && value !== 0)
+                      .map(([key, value]) => `${key}: ${Number(value).toFixed(key.includes("Resistance") || key.includes("Chance") ? 2 : 0)}`)
+                      .join(" | ")}</div>
+                    <div class="popup-item-actions">
+                      <button class="button" data-action="equip" data-item-id="${item.id}">Equip</button>
+                    </div>
                   </div>
-                  <div class="item-meta">${Object.entries(item.stats)
-                    .filter(([, value]) => typeof value === "number" && value !== 0)
-                    .map(([key, value]) => `${key}: ${Number(value).toFixed(key.includes("Resistance") || key.includes("Chance") ? 2 : 0)}`)
-                    .join(" | ")}</div>
-                  <div class="item-actions">
-                    <button class="button" data-action="equip" data-item-id="${item.id}">Equip</button>
-                  </div>
-                </div>
-              `,
-            )
-            .join("");
+                `,
+              )
+              .join("");
+    }
 
-    logList.innerHTML = scene
-      .getCombatLog()
-      .slice(-8)
-      .reverse()
-      .map((entry) => `<div class="log-entry">${entry}</div>`)
-      .join("");
-
+    // Pause / death menu
     const dead = !snapshot.player.alive;
     const paused = scene.getIsPaused();
     if (dead || paused) {

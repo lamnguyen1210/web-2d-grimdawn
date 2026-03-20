@@ -379,6 +379,53 @@ export class RenderSystem {
     this.ctx.scene.cameras.main.shake(duration, intensity / 1000);
   }
 
+  addCombatLogEntry(msg: string): void {
+    const cam = this.ctx.scene.cameras.main;
+    const x = 24;
+    const baseY = cam.height - 40;
+    const lineHeight = 20;
+    const maxEntries = 6;
+
+    // Shift existing entries up
+    for (const t of this.ctx.combatLogTexts) {
+      t.y -= lineHeight;
+    }
+
+    // Destroy oldest if at cap
+    if (this.ctx.combatLogTexts.length >= maxEntries) {
+      this.ctx.combatLogTexts[0].destroy();
+      this.ctx.combatLogTexts.shift();
+    }
+
+    const text = this.ctx.scene.add
+      .text(x, baseY, msg, {
+        fontFamily: "Trebuchet MS",
+        fontSize: "13px",
+        color: "#d4c4a8",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(90);
+
+    this.ctx.combatLogTexts.push(text);
+
+    this.ctx.scene.tweens.add({
+      targets: text,
+      alpha: 0,
+      delay: 2500,
+      duration: 1000,
+      ease: "Linear",
+      onComplete: () => {
+        text.destroy();
+        const idx = this.ctx.combatLogTexts.indexOf(text);
+        if (idx !== -1) {
+          this.ctx.combatLogTexts.splice(idx, 1);
+        }
+      },
+    });
+  }
+
   // ── Minimap ────────────────────────────────────────────────────────────────
 
   private updateMinimap(): void {

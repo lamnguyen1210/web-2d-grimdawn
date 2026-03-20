@@ -44,7 +44,7 @@ export class GameScene extends Phaser.Scene {
   private godModeKey!: Phaser.Input.Keyboard.Key;
   private isPaused = false;
 
-  private isInventoryVisible = true;
+  private isInventoryVisible = false;
   private lastSaveAt = 0;
 
   constructor() {
@@ -113,6 +113,7 @@ export class GameScene extends Phaser.Scene {
       showDebug: false,
       godMode: false,
       combatLog,
+      combatLogTexts: [],
       lastPointerWorld,
       minimapDots: [],
       autosave: () => this.autosave(),
@@ -233,6 +234,10 @@ export class GameScene extends Phaser.Scene {
     return this.isPaused;
   }
 
+  getIsInventoryVisible(): boolean {
+    return this.isInventoryVisible;
+  }
+
   resumeGame(): void {
     this.isPaused = false;
   }
@@ -341,10 +346,6 @@ export class GameScene extends Phaser.Scene {
     }
     if (Phaser.Input.Keyboard.JustDown(this.inventoryKey)) {
       this.isInventoryVisible = !this.isInventoryVisible;
-      const sidebar = document.querySelector<HTMLElement>(".sidebar");
-      if (sidebar) {
-        sidebar.style.opacity = this.isInventoryVisible ? "1" : "0.22";
-      }
     }
     if (Phaser.Input.Keyboard.JustDown(this.potionKey)) {
       this.combat.consumePotion();
@@ -415,6 +416,7 @@ export class GameScene extends Phaser.Scene {
     if (this.ctx.combatLog.length > 40) {
       this.ctx.combatLog.shift();
     }
+    this.render.addCombatLogEntry(message);
   }
 
   private grantTestLoot(): void {
