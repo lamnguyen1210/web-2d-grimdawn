@@ -94,6 +94,37 @@ movement.ts  (free functions, no deps)
 - **lowercase filenames** for files that export free functions (`movement.ts`, `stats.ts`)
 - Systems mutate `ctx` directly — no return values for state changes
 - `ctx.log(msg)` for all combat log entries; `ctx.autosave()` after significant events
+- All damage flows through `CombatSystem.applyDamage()` — never write damage logic elsewhere
+- Visuals are always separate from state: `ctx.actors` holds positions/health, `ctx.actorViews` holds Phaser objects; `RenderSystem.refreshRenderState()` syncs them each frame
+
+## Key runtime patterns
+
+**Adding a new enemy type:** add definition to `src/content/enemies.ts`, add spawn to a zone encounter in `src/content/zones.ts`. No other files need changing.
+
+**Adding a new skill:** add definition to `src/content/skills.ts`, add a `tryCast*()` method to `SkillSystem`, wire a key in `GameScene.handleKeys()`.
+
+**Adding a new item:** add definition to `src/content/items.ts`. It automatically enters the loot pool for `rollLoot()`.
+
+**Adding a new stat:** add the field to `StatBlock` in `types.ts`, initialize it in `stats.ts` (`createStatBlock`), add it to `addStats()`.
+
+**Zone transition:** player walks into a `ZoneTransition` rectangle → `ZoneSystem.checkTransitions()` calls `transitionToZone()` → `clearZoneState()` destroys all Phaser objects → new zone spawns.
+
+## Deep-dive docs
+
+`docs/learn/` contains 9 in-depth documents for understanding the codebase:
+
+| File | Covers |
+|------|--------|
+| `00-index.md` | Overview, architecture diagram, key files table |
+| `01-how-web-games-work.md` | Canvas, Phaser, game loop, delta time |
+| `02-startup-flow.md` | Full trace from page load to gameplay |
+| `03-player-and-movement.md` | Player creation, stats, WASD + click-to-move |
+| `04-enemies-and-ai.md` | Enemy archetypes, AI state machine, spawning |
+| `05-combat-system.md` | Damage formula, burn/poison/chill, hazards, death |
+| `06-skills-and-spells.md` | All 5 abilities explained with code |
+| `07-items-and-loot.md` | Item system, affixes, rarity, loot drops |
+| `08-zones-and-world.md` | Zones, encounters, transitions, persistence |
+| `09-rendering.md` | Phaser game objects, camera, HUD, depth layers |
 
 ## Worktrees
 
