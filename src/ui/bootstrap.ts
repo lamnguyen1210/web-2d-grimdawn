@@ -85,6 +85,7 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
             </div>
           </div>
         </div>
+        <div id="quest-tracker" class="quest-tracker"></div>
         <div id="shop-popup" class="shop-popup" style="display:none">
           <div class="shop-popup-panel">
             <h2 class="shop-popup-title">Merchant Aldric</h2>
@@ -117,6 +118,7 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
   const popupStats = root.querySelector<HTMLElement>("#popup-stats")!;
   const popupEquipment = root.querySelector<HTMLElement>("#popup-equipment")!;
   const popupInventory = root.querySelector<HTMLElement>("#popup-inventory")!;
+  const questTracker = root.querySelector<HTMLElement>("#quest-tracker")!;
   const shopPopup = root.querySelector<HTMLElement>("#shop-popup")!;
   const shopGold = root.querySelector<HTMLElement>("#shop-gold")!;
   let activeMenuTab: GameMenuTab = "menu";
@@ -185,6 +187,22 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
                 `,
               )
               .join("");
+    }
+
+    // Quest tracker
+    const activeQuest = scene.getActiveQuestForUi();
+    if (activeQuest) {
+      questTracker.innerHTML = `
+        <div class="quest-title">${activeQuest.title}</div>
+        ${activeQuest.objectives.map((obj) =>
+          `<div class="quest-obj${obj.done ? " is-done" : ""}">
+            <span class="quest-check">${obj.done ? "✓" : "○"}</span>
+            <span>${obj.description}</span>
+          </div>`
+        ).join("")}
+      `;
+    } else {
+      questTracker.innerHTML = `<div class="quest-title">All quests complete!</div>`;
     }
 
     // Shop popup

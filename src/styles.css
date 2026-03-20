@@ -452,3 +452,49 @@ input {
   min-width: 28px;
   text-align: right;
 }
+
+/* ── Quest tracker ───────────────────────────────────────────────────────── */
+
+.quest-tracker {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 8;
+  min-width: 200px;
+  max-width: 260px;
+  padding: 12px 14px;
+  border: 1px solid rgba(212, 166, 113, 0.2);
+  border-radius: 12px;
+  background: rgba(10, 8, 6, 0.72);
+  pointer-events: none;
+}
+
+.quest-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f2c680;
+  margin-bottom: 8px;
+}
+
+.quest-obj {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #c7b398;
+  line-height: 1.5;
+}
+
+.quest-obj.is-done {
+  color: #7a9a6a;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.quest-check {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  color: inherit;
+}
