@@ -14,6 +14,7 @@ import { AISystem } from "../systems/AISystem";
 import type { GameContext } from "../systems/GameContext";
 import { CombatSystem, LEVEL_THRESHOLDS } from "../systems/CombatSystem";
 import { LootSystem } from "../systems/LootSystem";
+import { NpcSystem } from "../systems/NpcSystem";
 import { RenderSystem } from "../systems/RenderSystem";
 import { SkillSystem } from "../systems/SkillSystem";
 import { ZoneSystem } from "../systems/ZoneSystem";
@@ -26,6 +27,7 @@ export class GameScene extends Phaser.Scene {
   private render!: RenderSystem;
   private loot!: LootSystem;
   private combat!: CombatSystem;
+  private npc!: NpcSystem;
   private skill!: SkillSystem;
   private zone!: ZoneSystem;
   private ai!: AISystem;
@@ -42,6 +44,7 @@ export class GameScene extends Phaser.Scene {
   private lootKey!: Phaser.Input.Keyboard.Key;
   private escKey!: Phaser.Input.Keyboard.Key;
   private godModeKey!: Phaser.Input.Keyboard.Key;
+  private interactKey!: Phaser.Input.Keyboard.Key;
   private isPaused = false;
 
   private isInventoryVisible = false;
@@ -70,6 +73,7 @@ export class GameScene extends Phaser.Scene {
     this.lootKey = this.input.keyboard!.addKey("F5");
     this.escKey = this.input.keyboard!.addKey("ESC");
     this.godModeKey = this.input.keyboard!.addKey("F2");
+    this.interactKey = this.input.keyboard!.addKey("E");
 
     const overlayRect = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0).setOrigin(0, 0).setScrollFactor(0).setDepth(80);
     const zoneText = this.add
@@ -102,6 +106,9 @@ export class GameScene extends Phaser.Scene {
       projectileViews: new Map(),
       hazardViews: new Map(),
       pickupViews: new Map(),
+      npcs: new Map(),
+      npcViews: new Map(),
+      isShopOpen: false,
       floatingTexts: new Map(),
       attackEffects: new Map(),
       hudText,
@@ -124,8 +131,9 @@ export class GameScene extends Phaser.Scene {
     this.render = new RenderSystem(this.ctx);
     this.loot = new LootSystem(this.ctx);
     this.combat = new CombatSystem(this.ctx, this.render, this.loot);
+    this.npc = new NpcSystem(this.ctx, this.combat, this.loot);
     this.skill = new SkillSystem(this.ctx, this.combat, this.render);
-    this.zone = new ZoneSystem(this.ctx, this.render, this.loot);
+    this.zone = new ZoneSystem(this.ctx, this.render, this.loot, this.npc);
     this.ai = new AISystem(this.ctx, this.combat, this.zone);
 
     this.input.mouse?.disableContextMenu();
@@ -244,6 +252,22 @@ export class GameScene extends Phaser.Scene {
     return this.isInventoryVisible;
   }
 
+  getIsShopVisible(): boolean {
+    return this.ctx.isShopOpen;
+  }
+
+  closeShop(): void {
+    this.ctx.isShopOpen = false;
+  }
+
+  buyTonic(): void {
+    this.npc.buyTonic();
+  }
+
+  buyItem(): void {
+    this.npc.buyItem();
+  }
+
   resumeGame(): void {
     this.isPaused = false;
   }
@@ -333,6 +357,7 @@ export class GameScene extends Phaser.Scene {
     this.zone.spawnZone(this.ctx.activeZoneId);
     this.render.createZoneVisuals();
     this.render.syncActorViews();
+    this.render.syncNpcViews();
     this.ctx.overlayRect.setFillStyle(0x000000, 0);
   }
 
@@ -363,6 +388,14 @@ export class GameScene extends Phaser.Scene {
     }
     if (Phaser.Input.Keyboard.JustDown(this.lootKey)) {
       this.grantTestLoot();
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
+      const nearby = this.npc.getNearbyNpc(this.ctx.player.x, this.ctx.player.y);
+      if (nearby) {
+        this.npc.interactWith(nearby);
+      } else if (this.ctx.isShopOpen) {
+        this.ctx.isShopOpen = false;
+      }
     }
   }
 
