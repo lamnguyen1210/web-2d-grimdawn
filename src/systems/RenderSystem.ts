@@ -4,6 +4,8 @@ import { GameContext } from "./GameContext";
 import { ActorState } from "../gameplay/types";
 
 export class RenderSystem {
+  private minimapPoolIndex = 0;
+
   constructor(private ctx: GameContext) {}
 
   createZoneVisuals(): void {
@@ -428,6 +430,23 @@ export class RenderSystem {
 
   // ── Minimap ────────────────────────────────────────────────────────────────
 
+  private placeMinimapDot(x: number, y: number, radius: number, color: number, alpha: number, depth: number): void {
+    let dot: Phaser.GameObjects.Arc;
+    if (this.minimapPoolIndex < this.ctx.minimapDots.length) {
+      dot = this.ctx.minimapDots[this.minimapPoolIndex] as Phaser.GameObjects.Arc;
+      dot.setPosition(x, y);
+      dot.setRadius(radius);
+      dot.setFillStyle(color, alpha);
+      dot.setVisible(true);
+      dot.setDepth(depth);
+    } else {
+      dot = this.ctx.scene.add.circle(x, y, radius, color, alpha)
+        .setScrollFactor(0).setDepth(depth);
+      this.ctx.minimapDots.push(dot);
+    }
+    this.minimapPoolIndex++;
+  }
+
   private updateMinimap(): void {
     const zone = zoneDefinitions[this.ctx.activeZoneId];
     const mapW = 160;
@@ -443,47 +462,43 @@ export class RenderSystem {
       this.ctx.minimapBg.setStrokeStyle(1, 0xf4d39c, 0.4);
     }
 
-    // Clean old minimap dots
-    for (const dot of this.ctx.minimapDots) {
-      dot.destroy();
-    }
-    this.ctx.minimapDots = [];
+    this.minimapPoolIndex = 0;
 
     // Player dot (green)
     const px = offsetX + this.ctx.player.x * scaleX;
     const py = offsetY + this.ctx.player.y * scaleY;
-    this.ctx.minimapDots.push(
-      this.ctx.scene.add.circle(px, py, 3, 0x88c06f, 1).setScrollFactor(0).setDepth(97),
-    );
+    this.placeMinimapDot(px, py, 3, 0x88c06f, 1, 97);
 
     // Enemy dots (red)
     for (const actor of this.ctx.actors.values()) {
       if (actor.faction !== "enemy" || !actor.alive || actor.zoneId !== this.ctx.activeZoneId) {
         continue;
       }
-      const ex = offsetX + actor.x * scaleX;
-      const ey = offsetY + actor.y * scaleY;
-      this.ctx.minimapDots.push(
-        this.ctx.scene.add.circle(ex, ey, 2, actor.isBoss ? 0xf5d56b : 0xd56b52, 1).setScrollFactor(0).setDepth(96),
+      this.placeMinimapDot(
+        offsetX + actor.x * scaleX, offsetY + actor.y * scaleY,
+        2, actor.isBoss ? 0xf5d56b : 0xd56b52, 1, 96,
       );
     }
 
     // Pickup dots (gold)
     for (const pickup of this.ctx.pickups.values()) {
-      const ppx = offsetX + pickup.x * scaleX;
-      const ppy = offsetY + pickup.y * scaleY;
-      this.ctx.minimapDots.push(
-        this.ctx.scene.add.circle(ppx, ppy, 1.5, 0xf3cd66, 0.8).setScrollFactor(0).setDepth(96),
+      this.placeMinimapDot(
+        offsetX + pickup.x * scaleX, offsetY + pickup.y * scaleY,
+        1.5, 0xf3cd66, 0.8, 96,
       );
     }
 
-    // Transition markers
+    // Transition markers (circles)
     for (const t of zone.transitions) {
-      const tx = offsetX + (t.x + t.width / 2) * scaleX;
-      const ty = offsetY + (t.y + t.height / 2) * scaleY;
-      this.ctx.minimapDots.push(
-        this.ctx.scene.add.rectangle(tx, ty, 6, 4, 0xf2b35f, 0.8).setScrollFactor(0).setDepth(96),
+      this.placeMinimapDot(
+        offsetX + (t.x + t.width / 2) * scaleX, offsetY + (t.y + t.height / 2) * scaleY,
+        3, 0xf2b35f, 0.8, 96,
       );
+    }
+
+    // Hide surplus pool entries
+    for (let i = this.minimapPoolIndex; i < this.ctx.minimapDots.length; i++) {
+      this.ctx.minimapDots[i].setVisible(false);
     }
   }
 }
