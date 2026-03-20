@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { enemyDefinitions } from "../content/enemies";
 import { skillDefinitions } from "../content/skills";
+import { talentDefinitions } from "../content/talents";
 import { zoneDefinitions } from "../content/zones";
 import { addStats, createStatBlock, scaleStatsForLevel } from "../gameplay/stats";
 import type { ActorState, DamageType, PartialStats, ProjectileState } from "../gameplay/types";
@@ -190,6 +191,7 @@ export class CombatSystem {
     this.ctx.xp += amount;
     while (this.ctx.level < LEVEL_THRESHOLDS.length - 1 && this.ctx.xp >= this.ctx.nextLevelXp) {
       this.ctx.level += 1;
+      this.ctx.talentPoints += 1;
       this.ctx.nextLevelXp = LEVEL_THRESHOLDS[this.ctx.level] ?? LEVEL_THRESHOLDS.at(-1)!;
       this.recalculatePlayerStats(true);
       this.ctx.log(`Level up. You are now level ${this.ctx.level}.`);
@@ -223,7 +225,10 @@ export class CombatSystem {
       fireDamageMax: (this.ctx.level - 1) * 2,
       moveSpeed: (this.ctx.level - 1) * 3,
     };
-    return addStats(PLAYER_BASE_STATS, levelBonus, ...equipmentBonuses);
+    const talentBonuses = talentDefinitions
+      .filter((t) => this.ctx.spentTalents.has(t.id))
+      .map((t) => t.statBonus);
+    return addStats(PLAYER_BASE_STATS, levelBonus, ...equipmentBonuses, ...talentBonuses);
   }
 
   updateProjectiles(time: number, delta: number): void {
