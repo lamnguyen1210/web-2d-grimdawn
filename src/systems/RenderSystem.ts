@@ -1,7 +1,7 @@
 import { zoneDefinitions } from "../content/zones";
 import { skillDefinitions } from "../content/skills";
 import { GameContext } from "./GameContext";
-import { ActorState } from "../gameplay/types";
+import { ActorState, RenderNpc } from "../gameplay/types";
 
 export class RenderSystem {
   private minimapPoolIndex = 0;
@@ -21,6 +21,7 @@ export class RenderSystem {
       zone.id === "hollow"     ? 0x1f2d1f :
       zone.id === "ashveil"    ? 0x231e1a :
       zone.id === "deepmire"   ? 0x1a2420 :
+      zone.id === "town"       ? 0x3d3020 :
                                  0x261d1a;
     const bg = this.ctx.scene.add.rectangle(
       zone.width / 2,
@@ -38,6 +39,7 @@ export class RenderSystem {
       zone.id === "hollow"     ? 0x2a4028 :
       zone.id === "ashveil"    ? 0x3a2a1a :
       zone.id === "deepmire"   ? 0x243830 :
+      zone.id === "town"       ? 0x4d3e28 :
                                  0x3b291f;
     for (let i = 0; i < 18; i += 1) {
       const x = 120 + i * 90;
@@ -53,6 +55,7 @@ export class RenderSystem {
       zone.id === "hollow"     ? 0x3d5c3a :
       zone.id === "ashveil"    ? 0x4a3a2a :
       zone.id === "deepmire"   ? 0x364845 :
+      zone.id === "town"       ? 0x6b5540 :
                                  0x4b3830;
     const road = this.ctx.scene.add.rectangle(
       zone.width / 2,
@@ -130,6 +133,44 @@ export class RenderSystem {
         .setOrigin(0.5, 0.5)
         .setDepth(4);
       this.ctx.pickupViews.set(pickup.id, { sprite, label });
+    }
+  }
+
+  syncNpcViews(): void {
+    for (const npc of this.ctx.npcs.values()) {
+      if (this.ctx.npcViews.has(npc.id)) continue;
+      const color = npc.kind === "merchant" ? 0xe8b86a : 0x7abf7a;
+      const body = this.ctx.scene.add.circle(npc.x, npc.y, 16, color).setDepth(4);
+      const label = this.ctx.scene.add.text(npc.x, npc.y - 26, npc.name, {
+        fontFamily: "Trebuchet MS",
+        fontSize: "13px",
+        color: "#f4e8c4",
+        stroke: "#000000",
+        strokeThickness: 3,
+      }).setOrigin(0.5, 1).setDepth(6);
+      this.ctx.npcViews.set(npc.id, { body, label });
+    }
+  }
+
+  clearNpcViews(): void {
+    for (const view of this.ctx.npcViews.values()) {
+      view.body.destroy();
+      view.label.destroy();
+    }
+    this.ctx.npcViews.clear();
+  }
+
+  refreshNpcHints(): void {
+    const px = this.ctx.player.x;
+    const py = this.ctx.player.y;
+    for (const [id, view] of this.ctx.npcViews) {
+      const npc = this.ctx.npcs.get(id);
+      if (!npc) continue;
+      const dx = npc.x - px;
+      const dy = npc.y - py;
+      const inRange = dx * dx + dy * dy <= 64 * 64;
+      const actionHint = npc.kind === "merchant" ? "(E) Shop" : "(E) Heal 20g";
+      view.label.setText(inRange ? `${npc.name}\n${actionHint}` : npc.name);
     }
   }
 
@@ -242,6 +283,7 @@ export class RenderSystem {
     }
 
     this.updateMinimap();
+    this.refreshNpcHints();
   }
 
   updateHud(): void {
