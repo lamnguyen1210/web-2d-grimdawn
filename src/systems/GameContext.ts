@@ -49,6 +49,8 @@ export interface GameContext {
   npcViews: Map<string, RenderNpc>;
   isShopOpen: boolean;
   visitedZoneIds: Set<ZoneId>;
+  talentPoints: number;
+  spentTalents: Set<string>;
   floatingTexts: Map<string, Phaser.GameObjects.Text>;
   attackEffects: Map<string, RenderAttackEffect>;
   clickPulse?: RenderClickPulse;
