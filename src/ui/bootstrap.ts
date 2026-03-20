@@ -85,6 +85,25 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
             </div>
           </div>
         </div>
+        <div id="shop-popup" class="shop-popup" style="display:none">
+          <div class="shop-popup-panel">
+            <h2 class="shop-popup-title">Merchant Aldric</h2>
+            <div id="shop-gold" class="shop-gold"></div>
+            <div class="shop-items">
+              <div class="shop-item">
+                <span class="shop-item-name">Health Tonic</span>
+                <span class="shop-item-cost">5g</span>
+                <button class="button" data-action="buy-tonic">Buy</button>
+              </div>
+              <div class="shop-item">
+                <span class="shop-item-name">Magic Item (random)</span>
+                <span class="shop-item-cost">25g</span>
+                <button class="button" data-action="buy-item">Buy</button>
+              </div>
+            </div>
+            <button class="button" data-action="close-shop" style="margin-top:12px">Close (E)</button>
+          </div>
+        </div>
       </section>
     </div>
   `;
@@ -98,6 +117,8 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
   const popupStats = root.querySelector<HTMLElement>("#popup-stats")!;
   const popupEquipment = root.querySelector<HTMLElement>("#popup-equipment")!;
   const popupInventory = root.querySelector<HTMLElement>("#popup-inventory")!;
+  const shopPopup = root.querySelector<HTMLElement>("#shop-popup")!;
+  const shopGold = root.querySelector<HTMLElement>("#shop-gold")!;
   let activeMenuTab: GameMenuTab = "menu";
   let wasMenuVisible = false;
 
@@ -164,6 +185,13 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
                 `,
               )
               .join("");
+    }
+
+    // Shop popup
+    const shopVisible = scene.getIsShopVisible();
+    shopPopup.style.display = shopVisible ? "flex" : "none";
+    if (shopVisible) {
+      shopGold.textContent = `Gold: ${snapshot.inventory.gold}g`;
     }
 
     // Pause / death menu
@@ -245,6 +273,12 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
       scene.loadLastSaveState();
     } else if (control.dataset.action === "new-game") {
       scene.startNewGame();
+    } else if (control.dataset.action === "buy-tonic") {
+      scene.buyTonic();
+    } else if (control.dataset.action === "buy-item") {
+      scene.buyItem();
+    } else if (control.dataset.action === "close-shop") {
+      scene.closeShop();
     } else {
       return;
     }
