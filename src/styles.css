@@ -386,3 +386,69 @@ input {
     max-height: 86vh;
   }
 }
+
+/* ── Shop popup ──────────────────────────────────────────────────────────── */
+
+.shop-popup {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.shop-popup-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px 32px;
+  min-width: 280px;
+  border: 1px solid rgba(232, 184, 106, 0.3);
+  border-radius: 20px;
+  background: rgba(14, 11, 9, 0.92);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  pointer-events: auto;
+}
+
+.shop-popup-title {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #e8b86a;
+}
+
+.shop-gold {
+  font-size: 0.82rem;
+  color: #f2c680;
+}
+
+.shop-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.shop-item-name {
+  flex: 1;
+  font-size: 0.82rem;
+  color: #f0e6d2;
+}
+
+.shop-item-cost {
+  font-size: 0.78rem;
+  color: #f2c680;
+  min-width: 28px;
+  text-align: right;
+}
