@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { enemyDefinitions } from "../content/enemies";
 import { zoneDefinitions } from "../content/zones";
 import { scaleStatsForLevel } from "../gameplay/stats";
-import type { ActorState, EncounterDefinition, ZoneId } from "../gameplay/types";
+import type { ActorState, EncounterDefinition, EliteModifier, ZoneId } from "../gameplay/types";
 import type { GameContext } from "./GameContext";
 import type { LootSystem } from "./LootSystem";
 import type { RenderSystem } from "./RenderSystem";
@@ -22,22 +22,24 @@ export class ZoneSystem {
         continue;
       }
       for (const spawn of encounter.spawns) {
-        this.spawnEnemy(spawn.enemyId, spawn.x, spawn.y, encounter);
+        this.spawnEnemy(spawn.enemyId, spawn.x, spawn.y, encounter, spawn.elite);
       }
       if (encounter.chest) {
-        this.spawnChest(encounter.id, encounter.zoneId === "hollow" ? 1220 : 910, encounter.zoneId === "hollow" ? 1080 : 560);
+        const chestX = encounter.chestX ?? (encounter.zoneId === "hollow" ? 1220 : 910);
+        const chestY = encounter.chestY ?? (encounter.zoneId === "hollow" ? 1080 : 560);
+        this.spawnChest(encounter.id, chestX, chestY);
       }
     }
   }
 
-  spawnEnemy(enemyId: string, x: number, y: number, encounter: EncounterDefinition): void {
+  spawnEnemy(enemyId: string, x: number, y: number, encounter: EncounterDefinition, elite?: EliteModifier): void {
     const definition = enemyDefinitions[enemyId];
     const level =
-      encounter.zoneId === "arena"
-        ? Math.max(2, this.ctx.level + (enemyId === "warden" ? 1 : 0))
-        : encounter.zoneId === "hollow"
-          ? Math.max(2, this.ctx.level)
-          : Math.max(1, this.ctx.level);
+      encounter.zoneId === "arena"    ? Math.max(2, this.ctx.level + (enemyId === "warden" ? 1 : 0))
+    : encounter.zoneId === "ashveil"  ? Math.max(1, this.ctx.level + 1)
+    : encounter.zoneId === "deepmire" ? Math.max(1, this.ctx.level + 2)
+    : encounter.zoneId === "hollow"   ? Math.max(2, this.ctx.level)
+    :                                   Math.max(1, this.ctx.level);
     const stats = scaleStatsForLevel(definition.baseStats, level);
     const actor: ActorState = {
       id: `${enemyId}-${Phaser.Math.RND.uuid()}`,
@@ -76,6 +78,56 @@ export class ZoneSystem {
       phase: 1,
     };
     this.ctx.actors.set(actor.id, actor);
+
+    if (elite) {
+      actor.isElite = true;
+      actor.eliteModifier = elite;
+
+      // Step A — all elites: health ×1.6, phys+fire damage ×1.2
+      actor.stats = {
+        ...actor.stats,
+        maxHealth:         Math.round(actor.stats.maxHealth         * 1.6),
+        physicalDamageMin: Math.round(actor.stats.physicalDamageMin * 1.2),
+        physicalDamageMax: Math.round(actor.stats.physicalDamageMax * 1.2),
+        fireDamageMin:     Math.round(actor.stats.fireDamageMin     * 1.2),
+        fireDamageMax:     Math.round(actor.stats.fireDamageMax     * 1.2),
+      };
+
+      // Step B — modifier-specific extras
+      if (elite === "frenzied") {
+        actor.attackCooldownMultiplier = 0.6;
+      } else if (elite === "armored") {
+        actor.stats = {
+          ...actor.stats,
+          armor:              Math.round(actor.stats.armor * 1.6),
+          physicalResistance: Math.min(0.85, actor.stats.physicalResistance + 0.15),
+          fireResistance:     Math.min(0.85, actor.stats.fireResistance     + 0.15),
+          poisonResistance:   Math.min(0.85, actor.stats.poisonResistance   + 0.15),
+        };
+      } else if (elite === "regenerating") {
+        actor.stats = { ...actor.stats, healthRegen: actor.stats.healthRegen + 3 };
+      } else if (elite === "empowered") {
+        // Correct ×1.2 damage from Step A up to ×1.35 net (factor = 1.35/1.2)
+        const correction = 1.35 / 1.2;
+        actor.stats = {
+          ...actor.stats,
+          physicalDamageMin: Math.round(actor.stats.physicalDamageMin * correction),
+          physicalDamageMax: Math.round(actor.stats.physicalDamageMax * correction),
+          fireDamageMin:     Math.round(actor.stats.fireDamageMin     * correction),
+          fireDamageMax:     Math.round(actor.stats.fireDamageMax     * correction),
+        };
+      }
+      // volatile: no stat extras; explosion handled in CombatSystem on death
+
+      // Step C — re-sync health to new maxHealth (MUST be last)
+      actor.health = actor.stats.maxHealth;
+
+      // Step D — visual + name
+      actor.radius += 3;
+      const title = elite.charAt(0).toUpperCase() + elite.slice(1);
+      actor.name  = `${title} ${actor.name}`;
+      actor.color = actor.color | 0x404040;
+    }
   }
 
   spawnChest(encounterId: string, x: number, y: number): void {
