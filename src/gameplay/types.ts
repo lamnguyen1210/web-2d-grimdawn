@@ -55,6 +55,7 @@ export interface ItemInstance {
   rarity: ItemRarity;
   stats: PartialStats;
   affixIds: string[];
+  requiredLevel: number;
 }
 
 export interface SkillDefinition {

@@ -43,6 +43,7 @@ export class LootSystem {
       rarity,
       affixIds: selectedAffixes.map((affix) => affix.id),
       stats: addStats(base.baseStats, ...selectedAffixes.map((affix) => affix.stats)),
+      requiredLevel: base.requiredLevel,
     };
   }
 

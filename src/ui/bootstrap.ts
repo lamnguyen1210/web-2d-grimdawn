@@ -126,7 +126,10 @@ export const bootstrapApp = (root: HTMLDivElement | null): void => {
                       .map(([key, value]) => `${key}: ${Number(value).toFixed(key.includes("Resistance") || key.includes("Chance") ? 2 : 0)}`)
                       .join(" | ")}</div>
                     <div class="popup-item-actions">
-                      <button class="button" data-action="equip" data-item-id="${item.id}">Equip</button>
+                      <button class="button" data-action="equip" data-item-id="${item.id}"
+                        ${(item.requiredLevel ?? 1) > snapshot.level ? 'disabled style="opacity:0.4;cursor:default"' : ""}>
+                        ${(item.requiredLevel ?? 1) > snapshot.level ? `Req Lvl ${item.requiredLevel}` : "Equip"}
+                      </button>
                     </div>
                   </div>
                 `,

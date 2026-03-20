@@ -184,6 +184,11 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     const item = this.ctx.inventory.items[itemIndex];
+    const requiredLevel = item.requiredLevel ?? 1;
+    if (this.ctx.level < requiredLevel) {
+      this.log(`Cannot equip ${item.name} — requires level ${requiredLevel}.`);
+      return;
+    }
     const previous = this.ctx.inventory.equipped[item.slot];
     if (previous) {
       this.ctx.inventory.items.push(previous);
