@@ -5,6 +5,7 @@ import { scaleStatsForLevel } from "../gameplay/stats";
 import type { ActorState, EncounterDefinition, EliteModifier, ZoneId } from "../gameplay/types";
 import type { GameContext } from "./GameContext";
 import type { LootSystem } from "./LootSystem";
+import type { NpcSystem } from "./NpcSystem";
 import type { RenderSystem } from "./RenderSystem";
 
 export class ZoneSystem {
@@ -12,6 +13,7 @@ export class ZoneSystem {
     private ctx: GameContext,
     private render: RenderSystem,
     private loot: LootSystem,
+    private npc: NpcSystem,
   ) {}
 
   spawnZone(zoneId: ZoneId): void {
@@ -30,6 +32,7 @@ export class ZoneSystem {
         this.spawnChest(encounter.id, chestX, chestY);
       }
     }
+    this.npc.spawnZoneNpcs(zoneId);
   }
 
   spawnEnemy(enemyId: string, x: number, y: number, encounter: EncounterDefinition, elite?: EliteModifier): void {
@@ -173,11 +176,16 @@ export class ZoneSystem {
     this.spawnZone(zoneId);
     this.render.createZoneVisuals();
     this.render.syncActorViews();
+    this.render.syncNpcViews();
     this.ctx.log(`Entered ${zoneDefinitions[zoneId].name}.`);
     this.ctx.autosave();
   }
 
   clearZoneState(): void {
+    this.npc.clearNpcs();
+    this.render.clearNpcViews();
+    this.ctx.isShopOpen = false;
+
     for (const timer of this.ctx.pendingTimers) {
       timer.remove(false);
     }
