@@ -6,7 +6,18 @@ export type EnemyArchetype = "rusher" | "ranged" | "bruiser" | "boss";
 export type ItemSlot = "weapon" | "chest" | "ring";
 export type ItemRarity = "common" | "magic" | "rare";
 export type SkillId = "basicAttack" | "cleaveShot" | "fireBomb" | "frostNova" | "venomShot";
-export type ZoneId = "crossroads" | "arena" | "hollow" | "ashveil" | "deepmire";
+export type ZoneId = "crossroads" | "arena" | "hollow" | "ashveil" | "deepmire" | "town";
+
+export type NpcKind = "merchant" | "healer";
+
+export interface NpcState {
+  id: string;
+  kind: NpcKind;
+  name: string;
+  x: number;
+  y: number;
+  zoneId: ZoneId;
+}
 
 export type EliteModifier =
   | "frenzied"
@@ -279,4 +290,9 @@ export interface RenderAttackEffect {
 export interface RenderClickPulse {
   ring: Phaser.GameObjects.Arc;
   expiresAt: number;
+}
+
+export interface RenderNpc {
+  body: Phaser.GameObjects.Arc;
+  label: Phaser.GameObjects.Text;
 }
