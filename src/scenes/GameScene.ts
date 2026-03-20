@@ -112,6 +112,8 @@ export class GameScene extends Phaser.Scene {
       npcViews: new Map(),
       isShopOpen: false,
       visitedZoneIds: new Set<ZoneId>(),
+      talentPoints: 0,
+      spentTalents: new Set<string>(),
       floatingTexts: new Map(),
       attackEffects: new Map(),
       hudText,
@@ -181,6 +183,8 @@ export class GameScene extends Phaser.Scene {
       inventory: this.ctx.inventory,
       clearedEncounterIds: [...this.ctx.clearedEncounterIds],
       visitedZoneIds: [...this.ctx.visitedZoneIds],
+      talentPoints: this.ctx.talentPoints,
+      spentTalents: [...this.ctx.spentTalents],
       level: this.ctx.level,
       xp: this.ctx.xp,
       nextLevelXp: this.ctx.nextLevelXp,
@@ -326,6 +330,8 @@ export class GameScene extends Phaser.Scene {
     this.ctx.activeZoneId = (save?.zoneId ?? "crossroads") as ZoneId;
     this.ctx.clearedEncounterIds = new Set(save?.clearedEncounterIds ?? []);
     this.ctx.visitedZoneIds = new Set((save?.visitedZoneIds ?? [this.ctx.activeZoneId]) as ZoneId[]);
+    this.ctx.talentPoints = save?.talentPoints ?? 0;
+    this.ctx.spentTalents = new Set(save?.spentTalents ?? []);
 
     const playerStats = this.combat.buildPlayerStats();
     this.ctx.player = {
@@ -448,6 +454,26 @@ export class GameScene extends Phaser.Scene {
         player.moveTarget = undefined;
       }
     }
+  }
+
+  getTalentSnapshot(): { points: number; spent: Set<string> } {
+    return { points: this.ctx?.talentPoints ?? 0, spent: this.ctx?.spentTalents ?? new Set() };
+  }
+
+  spendTalent(talentId: string): void {
+    if (this.ctx.talentPoints <= 0) {
+      this.log("No talent points available.");
+      return;
+    }
+    if (this.ctx.spentTalents.has(talentId)) {
+      this.log("Talent already unlocked.");
+      return;
+    }
+    this.ctx.spentTalents.add(talentId);
+    this.ctx.talentPoints -= 1;
+    this.combat.recalculatePlayerStats();
+    this.log("Talent unlocked.");
+    this.autosave();
   }
 
   getActiveQuestForUi(): { title: string; objectives: Array<{ description: string; done: boolean }> } | null {
