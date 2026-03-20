@@ -15,7 +15,7 @@ export const PLAYER_BASE_STATS = createStatBlock({
   maxEnergy: 80,
   energyRegen: 5.5,
   armor: 10,
-  moveSpeed: 164 * 2,
+  moveSpeed: 164,
   attackSpeed: 1,
   physicalDamageMin: 8,
   physicalDamageMax: 12,
